@@ -12,6 +12,7 @@ import { ProfileSetup } from "@/pages/ProfileSetup";
 import { InvestorQuestion } from "@/pages/InvestorQuestion";
 import { PrivacyPolicy } from "@/pages/PrivacyPolicy";
 import { TermsOfService } from "@/pages/TermsOfService";
+import { Company } from "@/pages/Company";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,21 +27,19 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/login" component={GooglePixel} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
-      {!isAuthenticated ? (
+      <Route path="/company" component={Company} />
+      {isAuthenticated ? (
         <>
-          <Route path="/" component={GooglePixel} />
-          <Route><Redirect to="/" /></Route>
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-          <Route path="/home" component={Home} />
           <Route path="/profile-setup" component={ProfileSetup} />
           <Route path="/investor-question" component={InvestorQuestion} />
           <Route component={NotFound} />
         </>
+      ) : (
+        <Route><Redirect to="/login" /></Route>
       )}
     </Switch>
   );
