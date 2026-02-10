@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, Settings, Building2 } from "lucide-react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 
 function UserAccountButton() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -102,6 +102,13 @@ export function Home() {
           </h1>
         </div>
       </main>
+
+      <footer className="px-4 py-4 sm:px-6 flex justify-center">
+        <Link href="/company" className="text-white/70 text-sm flex items-center gap-1.5" data-testid="link-company">
+          <Building2 className="w-4 h-4" />
+          Company
+        </Link>
+      </footer>
     </div>
   );
 }
