@@ -20,7 +20,10 @@ export const users = pgTable("users", {
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  contactNumber: varchar("contact_number"),
+  country: varchar("country"),
   profileImageUrl: varchar("profile_image_url"),
+  profileCompleted: timestamp("profile_completed"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
