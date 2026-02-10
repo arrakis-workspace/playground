@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
 
 const statusIcons = [
   {
@@ -23,18 +22,18 @@ const authButtons = [
   {
     text: "Signup with Google",
     icon: "/figmaAssets/logos-google-icon.svg",
+    testId: "button-signup-google",
   },
   {
     text: "Login with Google",
     icon: "/figmaAssets/logos-google-icon.svg",
+    testId: "button-login-google",
   },
 ];
 
 export const GooglePixel = (): JSX.Element => {
-  const [, setLocation] = useLocation();
-
   const handleAuth = () => {
-    setLocation("/profile-setup");
+    window.location.href = "/api/login";
   };
 
   return (
@@ -63,6 +62,7 @@ export const GooglePixel = (): JSX.Element => {
               key={`auth-button-${index}`}
               variant="secondary"
               onClick={handleAuth}
+              data-testid={button.testId}
               className="h-[50px] bg-white hover:bg-white/90 text-black rounded-md flex items-center justify-center gap-3 [font-family:'Roboto',Helvetica] font-normal text-[13px]"
             >
               <img
