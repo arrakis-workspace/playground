@@ -10,6 +10,8 @@ import { GooglePixel } from "@/pages/GooglePixel";
 import { Home } from "@/pages/Home";
 import { ProfileSetup } from "@/pages/ProfileSetup";
 import { InvestorQuestion } from "@/pages/InvestorQuestion";
+import { PrivacyPolicy } from "@/pages/PrivacyPolicy";
+import { TermsOfService } from "@/pages/TermsOfService";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -22,22 +24,24 @@ function Router() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <Switch>
-        <Route path="/" component={GooglePixel} />
-        <Route><Redirect to="/" /></Route>
-      </Switch>
-    );
-  }
-
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/home" component={Home} />
-      <Route path="/profile-setup" component={ProfileSetup} />
-      <Route path="/investor-question" component={InvestorQuestion} />
-      <Route component={NotFound} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      {!isAuthenticated ? (
+        <>
+          <Route path="/" component={GooglePixel} />
+          <Route><Redirect to="/" /></Route>
+        </>
+      ) : (
+        <>
+          <Route path="/" component={Home} />
+          <Route path="/home" component={Home} />
+          <Route path="/profile-setup" component={ProfileSetup} />
+          <Route path="/investor-question" component={InvestorQuestion} />
+          <Route component={NotFound} />
+        </>
+      )}
     </Switch>
   );
 }
