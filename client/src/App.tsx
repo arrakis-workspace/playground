@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import { useAuth } from "@/hooks/use-auth";
 
 import { GooglePixel } from "@/pages/GooglePixel";
+import { Home } from "@/pages/Home";
 import { ProfileSetup } from "@/pages/ProfileSetup";
 import { InvestorQuestion } from "@/pages/InvestorQuestion";
 
@@ -32,7 +33,8 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={ProfileSetup} />
+      <Route path="/" component={Home} />
+      <Route path="/home" component={Home} />
       <Route path="/profile-setup" component={ProfileSetup} />
       <Route path="/investor-question" component={InvestorQuestion} />
       <Route component={NotFound} />
