@@ -23,10 +23,11 @@ export function Home() {
             Playground
           </h1>
           <p
-            className="text-white/90 text-base md:text-lg text-center max-w-xs sm:max-w-sm px-2 font-['Roboto',Helvetica]"
+            className="text-white/90 text-lg md:text-xl text-center max-w-xs sm:max-w-sm px-2 font-['Aclonica',sans-serif]"
             data-testid="text-tagline"
           >
-            Social investing made fun. Private and secure way to consolidate and share your investment portfolio.
+            Social investing made fun.<br />
+            Private and secure way to consolidate and share your investment portfolio.
           </p>
         </div>
       </main>
