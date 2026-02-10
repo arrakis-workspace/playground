@@ -100,19 +100,35 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/auth/google/callback", (req, res, next) => {
-    console.log("Google callback hit, query params:", req.query);
+    console.log("Google callback hit, full query:", JSON.stringify(req.query));
     if (req.query.error) {
-      console.error("Google OAuth error:", req.query.error, req.query.error_description);
-      return res.redirect("/");
+      const errorInfo = {
+        error: req.query.error,
+        error_description: req.query.error_description,
+        error_uri: req.query.error_uri,
+      };
+      console.error("Google OAuth error:", JSON.stringify(errorInfo));
+      return res.status(400).send(`<h2>Google OAuth Error</h2><pre>${JSON.stringify(errorInfo, null, 2)}</pre><p><a href="/">Go back</a></p>`);
     }
     const callbackURL = getCallbackURL(req);
     console.log("Callback using callbackURL:", callbackURL);
-    passport.authenticate("google", {
-      failureRedirect: "/",
-      callbackURL,
-    } as any)(req, res, next);
-  }, (_req, res) => {
-    res.redirect("/");
+    passport.authenticate("google", (err: any, user: any, info: any) => {
+      if (err) {
+        console.error("Passport auth error:", err);
+        return res.status(500).send(`<h2>Auth Error</h2><pre>${err.message}</pre><p><a href="/">Go back</a></p>`);
+      }
+      if (!user) {
+        console.error("Passport auth failed, info:", info);
+        return res.status(401).send(`<h2>Auth Failed</h2><pre>${JSON.stringify(info, null, 2)}</pre><p><a href="/">Go back</a></p>`);
+      }
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          console.error("Login error:", loginErr);
+          return res.status(500).send(`<h2>Login Error</h2><pre>${loginErr.message}</pre><p><a href="/">Go back</a></p>`);
+        }
+        res.redirect("/");
+      });
+    })(req, res, next);
   });
 
   app.get("/api/logout", (req, res) => {
