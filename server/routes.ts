@@ -1,11 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
-import { storage } from "./storage";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
-  registerAuthRoutes(app);
 
   const httpServer = createServer(app);
 
