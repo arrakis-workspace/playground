@@ -1,16 +1,17 @@
 import { Link } from "wouter";
-import { FileText, Shield, ArrowLeft } from "lucide-react";
+import { FileText, Shield } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { UserAccountButton } from "@/components/UserAccountButton";
 
 export function Company() {
   return (
     <div className="bg-[#2e99e7] w-full min-h-screen flex flex-col">
-      <header className="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 text-white" data-testid="link-back-home">
-          <ArrowLeft className="w-5 h-5" />
+      <header className="flex flex-wrap items-center gap-2 justify-between px-4 py-3 sm:px-6">
+        <Link href="/" className="flex items-center gap-2" data-testid="link-back-home">
           <img src="/figmaAssets/frame.svg" alt="Playground logo" className="w-8 h-8" data-testid="img-logo" />
           <span className="font-['Aclonica',sans-serif] text-[#34e916] text-xl">Playground</span>
         </Link>
+        <UserAccountButton />
       </header>
 
       <main className="flex-1 flex flex-col items-center px-4 py-8 sm:px-6">

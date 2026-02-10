@@ -1,18 +1,21 @@
 import { Link } from "wouter";
+import { UserAccountButton } from "@/components/UserAccountButton";
+import { CompanyFooter } from "@/components/CompanyFooter";
 
 export function TermsOfService() {
   return (
-    <div className="bg-white min-h-screen">
-      <header className="bg-[#2e99e7] px-4 py-4 sm:px-6">
+    <div className="bg-white min-h-screen flex flex-col">
+      <header className="bg-[#2e99e7] px-4 py-3 sm:px-6">
         <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-2 justify-between">
           <Link href="/" className="flex items-center gap-2">
             <img src="/figmaAssets/frame.svg" alt="Playground logo" className="w-8 h-8" data-testid="img-logo" />
             <span className="font-['Aclonica',sans-serif] text-[#34e916] text-xl">Playground</span>
           </Link>
+          <UserAccountButton />
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8 sm:px-6">
+      <main className="flex-1 max-w-3xl mx-auto px-4 py-8 sm:px-6 w-full">
         <h1 className="text-3xl font-bold text-gray-900 mb-6" data-testid="text-terms-title">Terms of Service</h1>
         <p className="text-sm text-gray-500 mb-8">Last updated: February 10, 2026</p>
 
@@ -85,6 +88,8 @@ export function TermsOfService() {
           </section>
         </div>
       </main>
+
+      <CompanyFooter variant="white" />
     </div>
   );
 }
