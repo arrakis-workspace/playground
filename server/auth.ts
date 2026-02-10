@@ -167,15 +167,6 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  app.get("/api/debug/auth-url", (req, res) => {
-    const baseURL = getBaseURL(req);
-    const redirectUri = `${baseURL}/api/auth/google/callback`;
-    res.json({
-      clientId: CLIENT_ID,
-      redirectUri,
-      note: "Make sure this exact redirect_uri is added in Google Cloud Console under Credentials > OAuth 2.0 Client > Authorized redirect URIs",
-    });
-  });
 }
 
 export const isAuthenticated: RequestHandler = (req, res, next) => {
