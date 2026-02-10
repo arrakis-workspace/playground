@@ -15,7 +15,7 @@ import { TermsOfService } from "@/pages/TermsOfService";
 import { Company } from "@/pages/Company";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -24,6 +24,8 @@ function Router() {
       </div>
     );
   }
+
+  const needsProfileSetup = isAuthenticated && user && !user.profileCompleted;
 
   return (
     <Switch>
@@ -35,8 +37,14 @@ function Router() {
       {isAuthenticated ? (
         <>
           <Route path="/profile-setup" component={ProfileSetup} />
-          <Route path="/investor-question" component={InvestorQuestion} />
-          <Route component={NotFound} />
+          {needsProfileSetup ? (
+            <Route><Redirect to="/profile-setup" /></Route>
+          ) : (
+            <>
+              <Route path="/investor-question" component={InvestorQuestion} />
+              <Route component={NotFound} />
+            </>
+          )}
         </>
       ) : (
         <Route><Redirect to="/login" /></Route>

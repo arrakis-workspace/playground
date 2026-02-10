@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  updateUserProfile(id: string, data: { firstName: string; lastName: string; contactNumber: string; country: string }): Promise<User>;
 }
 
 class DatabaseStorage implements IStorage {
@@ -25,6 +26,22 @@ class DatabaseStorage implements IStorage {
           updatedAt: new Date(),
         },
       })
+      .returning();
+    return user;
+  }
+
+  async updateUserProfile(id: string, data: { firstName: string; lastName: string; contactNumber: string; country: string }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        contactNumber: data.contactNumber,
+        country: data.country,
+        profileCompleted: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }

@@ -1,21 +1,67 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
 import { UserAccountButton } from "@/components/UserAccountButton";
 import { CompanyFooter } from "@/components/CompanyFooter";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { updateProfileSchema, type UpdateProfile } from "@shared/schema";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { useMutation } from "@tanstack/react-query";
 
 export const ProfileSetup = (): JSX.Element => {
   const [, setLocation] = useLocation();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [contactNumber, setContactNumber] = useState("");
-  const [country, setCountry] = useState("");
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const handleSubmit = () => {
-    if (firstName && lastName && contactNumber && country) {
-      setLocation("/investor-question");
+  const form = useForm<UpdateProfile>({
+    resolver: zodResolver(updateProfileSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      contactNumber: "",
+      country: "",
+    },
+  });
+
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        firstName: user.firstName ?? "",
+        lastName: user.lastName ?? "",
+        contactNumber: user.contactNumber ?? "",
+        country: user.country ?? "",
+      });
     }
+  }, [user]);
+
+  const saveProfileMutation = useMutation({
+    mutationFn: async (data: UpdateProfile) => {
+      const res = await apiRequest("POST", "/api/profile", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      toast({ title: "Profile saved successfully" });
+      setLocation("/investor-question");
+    },
+    onError: () => {
+      toast({ title: "Failed to save profile", variant: "destructive" });
+    },
+  });
+
+  const onSubmit = (data: UpdateProfile) => {
+    saveProfileMutation.mutate(data);
   };
 
   return (
@@ -47,47 +93,92 @@ export const ProfileSetup = (): JSX.Element => {
             data-testid="img-profile"
           />
 
-          <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
-            <Input
-              placeholder="First Name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              data-testid="input-first-name"
-              className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
-            />
-            <Input
-              placeholder="Last Name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              data-testid="input-last-name"
-              className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
-            />
-          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full mt-8 flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 w-full">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input
+                          placeholder="First Name"
+                          {...field}
+                          data-testid="input-first-name"
+                          className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-yellow-200" />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormControl>
+                        <Input
+                          placeholder="Last Name"
+                          {...field}
+                          data-testid="input-last-name"
+                          className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-yellow-200" />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          <Input
-            placeholder="Contact number"
-            value={contactNumber}
-            onChange={(e) => setContactNumber(e.target.value)}
-            data-testid="input-contact"
-            className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full mt-4"
-          />
+              <FormField
+                control={form.control}
+                name="contactNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        placeholder="Contact number"
+                        {...field}
+                        data-testid="input-contact"
+                        className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-yellow-200" />
+                  </FormItem>
+                )}
+              />
 
-          <Input
-            placeholder="Country of residence"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            data-testid="input-country"
-            className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full mt-4"
-          />
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        placeholder="Country of residence"
+                        {...field}
+                        data-testid="input-country"
+                        className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-yellow-200" />
+                  </FormItem>
+                )}
+              />
 
-          <Button
-            onClick={handleSubmit}
-            className="mt-8 h-[50px] bg-white hover:bg-white/90 text-black rounded-md font-['Aclonica',sans-serif] text-sm w-full"
-            variant="secondary"
-            data-testid="button-continue"
-          >
-            Continue
-          </Button>
+              <Button
+                type="submit"
+                disabled={saveProfileMutation.isPending}
+                className="mt-4 h-[50px] bg-white hover:bg-white/90 text-black rounded-md font-['Aclonica',sans-serif] text-sm w-full"
+                variant="secondary"
+                data-testid="button-continue"
+              >
+                {saveProfileMutation.isPending ? "Saving..." : "Save & Continue"}
+              </Button>
+            </form>
+          </Form>
         </div>
       </main>
 

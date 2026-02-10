@@ -28,5 +28,18 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const insertUserSchema = createInsertSchema(users);
+
+export const updateProfileSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  contactNumber: z.string().min(1, "Contact number is required"),
+  country: z.string().min(1, "Country is required"),
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type UpdateProfile = z.infer<typeof updateProfileSchema>;

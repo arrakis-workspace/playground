@@ -86,10 +86,17 @@ export async function setupAuth(app: Express) {
     }
 
     const code = req.query.code as string;
+    const state = req.query.state as string;
     if (!code) {
       console.error("No auth code received");
       return res.redirect("/");
     }
+
+    if (!state || state !== req.session.oauthState) {
+      console.error("OAuth state mismatch - possible CSRF");
+      return res.redirect("/");
+    }
+    delete req.session.oauthState;
 
     try {
       const baseURL = getBaseURL(req);
@@ -134,9 +141,10 @@ export async function setupAuth(app: Express) {
       });
 
       req.session.userId = user.id;
+      const redirectTo = user.profileCompleted ? "/" : "/profile-setup";
       req.session.save((err) => {
         if (err) console.error("Session save error:", err);
-        res.redirect("/");
+        res.redirect(redirectTo);
       });
     } catch (err: any) {
       console.error("OAuth callback error:", err.message);
