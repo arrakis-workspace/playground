@@ -6,13 +6,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 
 import { GooglePixel } from "@/pages/GooglePixel";
+import { ProfileSetup } from "@/pages/ProfileSetup";
+import { InvestorQuestion } from "@/pages/InvestorQuestion";
 
 function Router() {
   return (
     <Switch>
-      {/* Add pages below */}
       <Route path="/" component={GooglePixel} />
-      {/* Fallback to 404 */}
+      <Route path="/profile-setup" component={ProfileSetup} />
+      <Route path="/investor-question" component={InvestorQuestion} />
       <Route component={NotFound} />
     </Switch>
   );

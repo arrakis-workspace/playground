@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 const statusIcons = [
   {
@@ -30,6 +31,12 @@ const authButtons = [
 ];
 
 export const GooglePixel = (): JSX.Element => {
+  const [, setLocation] = useLocation();
+
+  const handleAuth = () => {
+    setLocation("/profile-setup");
+  };
+
   return (
     <div className="bg-[#2e99e6] w-full min-w-[411px] min-h-[731px] flex flex-col">
       <header className="flex justify-end items-center gap-2 p-2">
@@ -55,6 +62,7 @@ export const GooglePixel = (): JSX.Element => {
             <Button
               key={`auth-button-${index}`}
               variant="secondary"
+              onClick={handleAuth}
               className="h-[50px] bg-white hover:bg-white/90 text-black rounded-md flex items-center justify-center gap-3 [font-family:'Roboto',Helvetica] font-normal text-[13px]"
             >
               <img
