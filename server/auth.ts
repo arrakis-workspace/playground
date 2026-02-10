@@ -3,41 +3,17 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
-import { db } from "./db";
-import { users } from "@shared/schema";
-import { eq } from "drizzle-orm";
-import type { User } from "@shared/schema";
-
-async function getUser(id: string): Promise<User | undefined> {
-  const [user] = await db.select().from(users).where(eq(users.id, id));
-  return user;
-}
-
-async function upsertUser(userData: {
-  id: string;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  profileImageUrl: string | null;
-}): Promise<User> {
-  const [user] = await db
-    .insert(users)
-    .values(userData)
-    .onConflictDoUpdate({
-      target: users.id,
-      set: {
-        ...userData,
-        updatedAt: new Date(),
-      },
-    })
-    .returning();
-  return user;
-}
+import { storage } from "./storage";
 
 export async function setupAuth(app: Express) {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
     throw new Error("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set");
   }
+  if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET must be set");
+  }
+
+  const isProduction = process.env.NODE_ENV === "production";
 
   app.set("trust proxy", 1);
 
@@ -52,13 +28,14 @@ export async function setupAuth(app: Express) {
 
   app.use(
     session({
-      secret: process.env.SESSION_SECRET!,
+      secret: process.env.SESSION_SECRET,
       store: sessionStore,
       resave: false,
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
-        secure: true,
+        secure: isProduction,
+        sameSite: "lax",
         maxAge: sessionTtl,
       },
     })
@@ -82,7 +59,7 @@ export async function setupAuth(app: Express) {
       async (_accessToken, _refreshToken, profile, done) => {
         try {
           const email = profile.emails?.[0]?.value ?? null;
-          const user = await upsertUser({
+          const user = await storage.upsertUser({
             id: profile.id,
             email,
             firstName: profile.name?.givenName ?? null,
@@ -103,7 +80,7 @@ export async function setupAuth(app: Express) {
 
   passport.deserializeUser(async (id: string, done) => {
     try {
-      const user = await getUser(id);
+      const user = await storage.getUser(id);
       done(null, user || null);
     } catch (error) {
       done(error);
