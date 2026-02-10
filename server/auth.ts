@@ -34,7 +34,7 @@ export async function setupAuth(app: Express) {
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
-        secure: isProduction,
+        secure: true,
         sameSite: "lax",
         maxAge: sessionTtl,
       },
