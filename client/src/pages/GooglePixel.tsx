@@ -1,23 +1,5 @@
 import { Button } from "@/components/ui/button";
 
-const statusIcons = [
-  {
-    src: "/figmaAssets/network-wifi.svg",
-    alt: "Network wifi",
-    className: "w-6 h-6",
-  },
-  {
-    src: "/figmaAssets/network-cell.svg",
-    alt: "Network cell",
-    className: "w-6 h-6",
-  },
-  {
-    src: "/figmaAssets/battery-std.svg",
-    alt: "Battery std",
-    className: "w-6 h-6",
-  },
-];
-
 const authButtons = [
   {
     text: "Signup with Google",
@@ -37,36 +19,26 @@ export const GooglePixel = (): JSX.Element => {
   };
 
   return (
-    <div className="bg-[#2e99e6] w-full min-w-[411px] min-h-[731px] flex flex-col">
-      <header className="flex justify-end items-center gap-2 p-2">
-        {statusIcons.map((icon, index) => (
-          <img
-            key={`status-icon-${index}`}
-            className={icon.className}
-            alt={icon.alt}
-            src={icon.src}
-          />
-        ))}
-      </header>
-
-      <main className="flex-1 flex flex-col items-center justify-center gap-8 px-4">
+    <div className="bg-[#2e99e6] w-full min-h-screen flex flex-col items-center justify-center px-4 py-8">
+      <div className="flex flex-col items-center gap-8 w-full max-w-xs sm:max-w-sm md:max-w-md">
         <img
-          className="w-[125px] h-[125px]"
-          alt="Frame"
+          className="w-[100px] h-[100px] md:w-[125px] md:h-[125px]"
+          alt="Playground logo"
           src="/figmaAssets/frame.svg"
+          data-testid="img-logo"
         />
 
-        <div className="flex flex-col gap-4 w-full max-w-[258px]">
+        <div className="flex flex-col gap-4 w-full">
           {authButtons.map((button, index) => (
             <Button
               key={`auth-button-${index}`}
               variant="secondary"
               onClick={handleAuth}
               data-testid={button.testId}
-              className="h-[50px] bg-white hover:bg-white/90 text-black rounded-md flex items-center justify-center gap-3 [font-family:'Roboto',Helvetica] font-normal text-[13px]"
+              className="h-[50px] bg-white hover:bg-white/90 text-black rounded-md flex items-center justify-center gap-3 [font-family:'Roboto',Helvetica] font-normal text-sm"
             >
               <img
-                className="w-[38px] h-[38px]"
+                className="w-8 h-8"
                 alt="Google icon"
                 src={button.icon}
               />
@@ -74,7 +46,7 @@ export const GooglePixel = (): JSX.Element => {
             </Button>
           ))}
         </div>
-      </main>
+      </div>
     </div>
   );
 };
