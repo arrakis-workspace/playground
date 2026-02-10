@@ -44,16 +44,12 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  const callbackURL = process.env.REPLIT_DEV_DOMAIN
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/auth/google/callback`
-    : "/api/auth/google/callback";
-
   passport.use(
     new GoogleStrategy(
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL,
+        callbackURL: "/api/auth/google/callback",
         proxy: true,
       },
       async (_accessToken, _refreshToken, profile, done) => {
@@ -87,13 +83,21 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  app.get(
-    "/api/login",
+  function getCallbackURL(req: any): string {
+    const forwardedProto = req.get("x-forwarded-proto") || req.protocol;
+    const forwardedHost = req.get("x-forwarded-host") || req.get("host") || "";
+    return `${forwardedProto}://${forwardedHost}/api/auth/google/callback`;
+  }
+
+  app.get("/api/login", (req, res, next) => {
+    const callbackURL = getCallbackURL(req);
+    console.log("Login redirect, using callbackURL:", callbackURL);
     passport.authenticate("google", {
       scope: ["profile", "email"],
       prompt: "select_account",
-    })
-  );
+      callbackURL,
+    } as any)(req, res, next);
+  });
 
   app.get("/api/auth/google/callback", (req, res, next) => {
     console.log("Google callback hit, query params:", req.query);
@@ -101,9 +105,12 @@ export async function setupAuth(app: Express) {
       console.error("Google OAuth error:", req.query.error, req.query.error_description);
       return res.redirect("/");
     }
+    const callbackURL = getCallbackURL(req);
+    console.log("Callback using callbackURL:", callbackURL);
     passport.authenticate("google", {
       failureRedirect: "/",
-    })(req, res, next);
+      callbackURL,
+    } as any)(req, res, next);
   }, (_req, res) => {
     res.redirect("/");
   });
