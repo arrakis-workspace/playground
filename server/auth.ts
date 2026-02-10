@@ -95,15 +95,18 @@ export async function setupAuth(app: Express) {
     })
   );
 
-  app.get(
-    "/api/auth/google/callback",
+  app.get("/api/auth/google/callback", (req, res, next) => {
+    console.log("Google callback hit, query params:", req.query);
+    if (req.query.error) {
+      console.error("Google OAuth error:", req.query.error, req.query.error_description);
+      return res.redirect("/");
+    }
     passport.authenticate("google", {
       failureRedirect: "/",
-    }),
-    (_req, res) => {
-      res.redirect("/");
-    }
-  );
+    })(req, res, next);
+  }, (_req, res) => {
+    res.redirect("/");
+  });
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
