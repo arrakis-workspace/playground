@@ -30,10 +30,13 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/login" component={GooglePixel} />
+      <Route path="/login">
+        {isAuthenticated ? <Redirect to="/" /> : <GooglePixel />}
+      </Route>
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/company" component={Company} />
+
       {isAuthenticated ? (
         <>
           <Route path="/profile-setup" component={ProfileSetup} />

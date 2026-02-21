@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { UserAccountButton } from "@/components/UserAccountButton";
-import { CompanyFooter } from "@/components/CompanyFooter";
+import { PageLayout } from "@/components/PageLayout";
 
 const authButtons = [
   {
@@ -21,42 +20,34 @@ export const GooglePixel = (): JSX.Element => {
   };
 
   return (
-    <div className="bg-[#2e99e6] w-full min-h-screen flex flex-col">
-      <header className="flex flex-wrap items-center justify-end gap-2 px-4 py-3 sm:px-6">
-        <UserAccountButton />
-      </header>
+    <PageLayout>
+      <div className="flex flex-col items-center gap-8 w-full max-w-xs sm:max-w-sm md:max-w-md">
+        <img
+          className="w-[100px] h-[100px] md:w-[125px] md:h-[125px]"
+          alt="Playground logo"
+          src="/figmaAssets/frame.svg"
+          data-testid="img-logo"
+        />
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-        <div className="flex flex-col items-center gap-8 w-full max-w-xs sm:max-w-sm md:max-w-md">
-          <img
-            className="w-[100px] h-[100px] md:w-[125px] md:h-[125px]"
-            alt="Playground logo"
-            src="/figmaAssets/frame.svg"
-            data-testid="img-logo"
-          />
-
-          <div className="flex flex-col gap-4 w-full">
-            {authButtons.map((button, index) => (
-              <Button
-                key={`auth-button-${index}`}
-                variant="secondary"
-                onClick={handleAuth}
-                data-testid={button.testId}
-                className="h-[50px] bg-white hover:bg-white/90 text-black rounded-md flex items-center justify-center gap-3 [font-family:'Roboto',Helvetica] font-normal text-sm"
-              >
-                <img
-                  className="w-8 h-8"
-                  alt="Google icon"
-                  src={button.icon}
-                />
-                <span>{button.text}</span>
-              </Button>
-            ))}
-          </div>
+        <div className="flex flex-col gap-4 w-full">
+          {authButtons.map((button, index) => (
+            <Button
+              key={`auth-button-${index}`}
+              variant="secondary"
+              onClick={handleAuth}
+              data-testid={button.testId}
+              className="h-[50px] bg-white hover:bg-white/90 text-black rounded-md flex items-center justify-center gap-3 [font-family:'Roboto',Helvetica] font-normal text-sm"
+            >
+              <img
+                className="w-8 h-8"
+                alt="Google icon"
+                src={button.icon}
+              />
+              <span>{button.text}</span>
+            </Button>
+          ))}
         </div>
-      </main>
-
-      <CompanyFooter variant="blue" />
-    </div>
+      </div>
+    </PageLayout>
   );
 };

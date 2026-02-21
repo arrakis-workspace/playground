@@ -2,8 +2,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation } from "wouter";
-import { UserAccountButton } from "@/components/UserAccountButton";
-import { CompanyFooter } from "@/components/CompanyFooter";
+import { PageLayout } from "@/components/PageLayout";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -65,124 +64,116 @@ export const ProfileSetup = (): JSX.Element => {
   };
 
   return (
-    <div className="bg-[#2e99e6] w-full min-h-screen flex flex-col">
-      <header className="flex flex-wrap items-center justify-end gap-2 px-4 py-3 sm:px-6">
-        <UserAccountButton />
-      </header>
+    <PageLayout>
+      <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md">
+        <img
+          className="w-[60px] h-[60px] md:w-[75px] md:h-[75px]"
+          alt="Playground logo"
+          src="/figmaAssets/frame.svg"
+          data-testid="img-logo"
+        />
 
-      <main className="flex-1 flex flex-col items-center px-4 py-8 md:justify-center">
-        <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md">
-          <img
-            className="w-[60px] h-[60px] md:w-[75px] md:h-[75px]"
-            alt="Playground logo"
-            src="/figmaAssets/frame.svg"
-            data-testid="img-logo"
-          />
+        <p
+          className="font-['Aclonica',sans-serif] text-[#34e916] text-base md:text-lg leading-normal mt-4 w-full"
+          data-testid="text-welcome"
+        >
+          Welcome to Playground. Lets get started with play profile
+        </p>
 
-          <p
-            className="font-['Aclonica',sans-serif] text-[#34e916] text-base md:text-lg leading-normal mt-4 w-full"
-            data-testid="text-welcome"
-          >
-            Welcome to Playground. Lets get started with play profile
-          </p>
+        <img
+          className="w-[100px] h-[100px] md:w-[125px] md:h-[125px] mt-4"
+          alt="Profile"
+          src="/figmaAssets/account-circle.svg"
+          data-testid="img-profile"
+        />
 
-          <img
-            className="w-[100px] h-[100px] md:w-[125px] md:h-[125px] mt-4"
-            alt="Profile"
-            src="/figmaAssets/account-circle.svg"
-            data-testid="img-profile"
-          />
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full mt-8 flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row gap-4 w-full">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder="First Name"
-                          {...field}
-                          data-testid="input-first-name"
-                          className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-yellow-200" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder="Last Name"
-                          {...field}
-                          data-testid="input-last-name"
-                          className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-yellow-200" />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full mt-8 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 w-full">
               <FormField
                 control={form.control}
-                name="contactNumber"
+                name="firstName"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex-1">
                     <FormControl>
                       <Input
-                        placeholder="Contact number"
+                        placeholder="First Name"
                         {...field}
-                        data-testid="input-contact"
-                        className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full"
+                        data-testid="input-first-name"
+                        className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
                       />
                     </FormControl>
                     <FormMessage className="text-yellow-200" />
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name="country"
+                name="lastName"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex-1">
                     <FormControl>
                       <Input
-                        placeholder="Country of residence"
+                        placeholder="Last Name"
                         {...field}
-                        data-testid="input-country"
-                        className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full"
+                        data-testid="input-last-name"
+                        className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
                       />
                     </FormControl>
                     <FormMessage className="text-yellow-200" />
                   </FormItem>
                 )}
               />
+            </div>
 
-              <Button
-                type="submit"
-                disabled={saveProfileMutation.isPending}
-                className="mt-4 h-[50px] bg-white hover:bg-white/90 text-black rounded-md font-['Aclonica',sans-serif] text-sm w-full"
-                variant="secondary"
-                data-testid="button-continue"
-              >
-                {saveProfileMutation.isPending ? "Saving..." : "Save & Continue"}
-              </Button>
-            </form>
-          </Form>
-        </div>
-      </main>
+            <FormField
+              control={form.control}
+              name="contactNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder="Contact number"
+                      {...field}
+                      data-testid="input-contact"
+                      className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-yellow-200" />
+                </FormItem>
+              )}
+            />
 
-      <CompanyFooter variant="blue" />
-    </div>
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input
+                      placeholder="Country of residence"
+                      {...field}
+                      data-testid="input-country"
+                      className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-yellow-200" />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="submit"
+              disabled={saveProfileMutation.isPending}
+              className="mt-4 h-[50px] bg-white hover:bg-white/90 text-black rounded-md font-['Aclonica',sans-serif] text-sm w-full"
+              variant="secondary"
+              data-testid="button-continue"
+            >
+              {saveProfileMutation.isPending ? "Saving..." : "Save & Continue"}
+            </Button>
+          </form>
+        </Form>
+      </div>
+    </PageLayout>
   );
 };
