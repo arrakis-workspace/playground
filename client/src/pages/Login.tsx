@@ -14,7 +14,7 @@ const authButtons = [
   },
 ];
 
-export const GooglePixel = (): JSX.Element => {
+export const Login = (): JSX.Element => {
   const handleAuth = () => {
     window.location.href = "/api/login";
   };

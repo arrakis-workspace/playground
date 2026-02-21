@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "@/hooks/use-auth";
 
-import { GooglePixel } from "@/pages/GooglePixel";
+import { Login } from "@/pages/Login";
 import { Home } from "@/pages/Home";
 import { ProfileSetup } from "@/pages/ProfileSetup";
 import { InvestorQuestion } from "@/pages/InvestorQuestion";
@@ -31,7 +31,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/login">
-        {isAuthenticated ? <Redirect to="/" /> : <GooglePixel />}
+        {isAuthenticated ? <Redirect to="/" /> : <Login />}
       </Route>
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
