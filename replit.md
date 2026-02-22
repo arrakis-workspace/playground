@@ -7,6 +7,7 @@ This is a mobile-first financial tech investment platform built with a React fro
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Git push target: Always push to https://github.com/arrakis-workspace/playground.git (use GitHub integration token for authentication).
 
 ## System Architecture
 
