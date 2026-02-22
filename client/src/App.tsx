@@ -10,6 +10,11 @@ import { Login } from "@/pages/Login";
 import { Home } from "@/pages/Home";
 import { ProfileSetup } from "@/pages/ProfileSetup";
 import { InvestorQuestion } from "@/pages/InvestorQuestion";
+import { HandleSelection } from "@/pages/HandleSelection";
+import { LinkInstitution } from "@/pages/LinkInstitution";
+import { SnaptradeCallback } from "@/pages/SnaptradeCallback";
+import { Social } from "@/pages/Social";
+import { ChatPage } from "@/pages/Chat";
 import { PrivacyPolicy } from "@/pages/PrivacyPolicy";
 import { TermsOfService } from "@/pages/TermsOfService";
 import { Company } from "@/pages/Company";
@@ -25,32 +30,40 @@ function Router() {
     );
   }
 
-  const needsProfileSetup = isAuthenticated && user && !user.profileCompleted;
-
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/login">
-        {isAuthenticated ? <Redirect to="/" /> : <Login />}
-      </Route>
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/company" component={Company} />
 
-      {isAuthenticated ? (
+      <Route path="/login">
+        {isAuthenticated ? <Redirect to="/" /> : <Login />}
+      </Route>
+
+      {!isAuthenticated && (
+        <>
+          <Route path="/" component={Home} />
+          <Route><Redirect to="/login" /></Route>
+        </>
+      )}
+
+      {isAuthenticated && (
         <>
           <Route path="/profile-setup" component={ProfileSetup} />
-          {needsProfileSetup ? (
+          <Route path="/investor-question" component={InvestorQuestion} />
+          <Route path="/handle-selection" component={HandleSelection} />
+          <Route path="/link-institution" component={LinkInstitution} />
+          <Route path="/snaptrade-callback" component={SnaptradeCallback} />
+          <Route path="/social" component={Social} />
+          <Route path="/chat/:userId?" component={ChatPage} />
+          <Route path="/" component={Home} />
+
+          {!user?.profileCompleted && (
             <Route><Redirect to="/profile-setup" /></Route>
-          ) : (
-            <>
-              <Route path="/investor-question" component={InvestorQuestion} />
-              <Route component={NotFound} />
-            </>
           )}
+
+          <Route component={NotFound} />
         </>
-      ) : (
-        <Route><Redirect to="/login" /></Route>
       )}
     </Switch>
   );

@@ -6,7 +6,7 @@ export const InvestorQuestion = (): JSX.Element => {
   const [, setLocation] = useLocation();
 
   const handleAnswer = () => {
-    setLocation("/");
+    setLocation("/handle-selection");
   };
 
   return (
