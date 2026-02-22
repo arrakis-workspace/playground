@@ -1,0 +1,7 @@
+pandas
+plotly
+kaleido
+ipython
+nbformat
+ipykernel
+snaptrade-python-sdk==10.34.10
