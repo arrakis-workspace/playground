@@ -21,7 +21,7 @@ Git push target: Always push to https://github.com/arrakis-workspace/playground.
 - **Path aliases**: `@/` maps to `client/src/`, `@shared/` maps to `shared/`, `@assets/` maps to `attached_assets/`
 - **Pages**:
   - `Login` — Landing/auth with Google OAuth
-  - `ProfileSetup` — User details form (first/last name, contact, country)
+  - `ProfileSetup` — User details form (first/last name, contact, country) + notification settings toggles
   - `InvestorQuestion` — Yes/no investor question
   - `HandleSelection` — Choose unique handle (@username)
   - `LinkInstitution` — Connect brokerage via SnapTrade
@@ -55,9 +55,10 @@ Git push target: Always push to https://github.com/arrakis-workspace/playground.
 ### API Routes
 - **Auth**: GET `/api/login`, GET `/api/auth/google/callback`, GET `/api/logout`, GET `/api/auth/user`
 - **Profile**: POST `/api/profile` (update profile), POST `/api/handle` (set handle), GET `/api/handle/check/:handle`
+- **Notifications**: GET `/api/notifications/settings`, PUT `/api/notifications/settings`
 - **SnapTrade**: POST `/api/snaptrade/register`, GET `/api/snaptrade/login-url`, POST `/api/snaptrade/sync`
 - **Portfolio**: GET `/api/portfolio/holdings`, GET `/api/portfolio/accounts`, GET `/api/portfolio/history`
-- **Social**: GET `/api/users/search`, POST `/api/connections/request`, GET `/api/connections`, GET `/api/connections/pending`, POST `/api/connections/:id/accept`, POST `/api/connections/:id/reject`
+- **Social**: GET `/api/users/search`, POST `/api/connections/request`, GET `/api/connections`, GET `/api/connections/pending`, POST `/api/connections/:id/accept`, POST `/api/connections/:id/reject`, GET `/api/connections/unseen-count`, POST `/api/connections/mark-seen`
 - **Messaging**: POST `/api/messages`, GET `/api/messages/:userId`, GET `/api/conversations`
 
 ### Build & Scripts
@@ -76,4 +77,5 @@ Git push target: Always push to https://github.com/arrakis-workspace/playground.
 - **UI Framework**: shadcn/ui components (Radix UI + Tailwind CSS + CVA)
 - **Fonts**: Google Fonts (Aclonica, Roboto, Ubuntu) loaded via CDN
 - **Static Assets**: Figma-exported SVG assets referenced from `/figmaAssets/` directory
-- **Secrets Required**: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SESSION_SECRET, SNAPTRADE_CLIENT_ID (optional), SNAPTRADE_CONSUMER_KEY (optional)
+- **Email**: Resend (`resend` npm package) for transactional email notifications (connection requests). Service in `server/email.ts`
+- **Secrets Required**: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SESSION_SECRET, RESEND_API_KEY, SNAPTRADE_CLIENT_ID (optional), SNAPTRADE_CONSUMER_KEY (optional)

@@ -1,7 +1,7 @@
-import { type User, type UpsertUser, type LinkedAccount, type InsertLinkedAccount, type Holding, type InsertHolding, type PortfolioHistoryEntry, type Connection, type InsertConnection, type Message, type InsertMessage } from "@shared/schema";
+import { type User, type UpsertUser, type UpdateNotificationSettings, type LinkedAccount, type InsertLinkedAccount, type Holding, type InsertHolding, type PortfolioHistoryEntry, type Connection, type InsertConnection, type Message, type InsertMessage } from "@shared/schema";
 import { db } from "./db";
 import { users, linkedAccounts, holdings, portfolioHistory, connections, messages } from "@shared/schema";
-import { eq, or, and, ilike, desc, asc, sql } from "drizzle-orm";
+import { eq, or, and, ilike, desc, asc, sql, gt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -11,6 +11,9 @@ export interface IStorage {
   getUserByHandle(handle: string): Promise<User | undefined>;
   checkHandleAvailable(handle: string): Promise<boolean>;
   updateSnaptradeSecret(id: string, secret: string): Promise<void>;
+  updateNotificationSettings(id: string, settings: UpdateNotificationSettings): Promise<User>;
+  updateLastSeenRequestsAt(id: string): Promise<void>;
+  getUnseenRequestCount(userId: string): Promise<number>;
 
   createLinkedAccount(data: InsertLinkedAccount): Promise<LinkedAccount>;
   getLinkedAccounts(userId: string): Promise<LinkedAccount[]>;
@@ -91,6 +94,45 @@ class DatabaseStorage implements IStorage {
 
   async updateSnaptradeSecret(id: string, secret: string): Promise<void> {
     await db.update(users).set({ snaptradeUserSecret: secret, updatedAt: new Date() }).where(eq(users.id, id));
+  }
+
+  async updateNotificationSettings(id: string, settings: UpdateNotificationSettings): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        emailNotifications: settings.emailNotifications,
+        textNotifications: settings.textNotifications,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async updateLastSeenRequestsAt(id: string): Promise<void> {
+    await db.update(users).set({ lastSeenRequestsAt: new Date(), updatedAt: new Date() }).where(eq(users.id, id));
+  }
+
+  async getUnseenRequestCount(userId: string): Promise<number> {
+    const user = await this.getUser(userId);
+    if (!user) return 0;
+    const lastSeen = user.lastSeenRequestsAt;
+    let query;
+    if (lastSeen) {
+      query = await db.select({ count: sql<number>`count(*)` }).from(connections)
+        .where(and(
+          eq(connections.receiverId, userId),
+          eq(connections.status, "pending"),
+          gt(connections.createdAt, lastSeen)
+        ));
+    } else {
+      query = await db.select({ count: sql<number>`count(*)` }).from(connections)
+        .where(and(
+          eq(connections.receiverId, userId),
+          eq(connections.status, "pending")
+        ));
+    }
+    return Number(query[0]?.count || 0);
   }
 
   async createLinkedAccount(data: InsertLinkedAccount): Promise<LinkedAccount> {

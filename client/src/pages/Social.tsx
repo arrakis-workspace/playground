@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageLayout } from "@/components/PageLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,14 @@ export function Social() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [tab, setTab] = useState<"connections" | "requests" | "search">("connections");
+
+  useEffect(() => {
+    apiRequest("POST", "/api/connections/mark-seen")
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["/api/connections/unseen-count"] });
+      })
+      .catch(() => {});
+  }, []);
 
   const { data: connections = [] } = useQuery<any[]>({
     queryKey: ["/api/connections"],

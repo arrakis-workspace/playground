@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth, isAuthenticated } from "./auth";
 import { storage } from "./storage";
-import { updateProfileSchema, updateHandleSchema, sendMessageSchema } from "@shared/schema";
+import { updateProfileSchema, updateHandleSchema, sendMessageSchema, updateNotificationSettingsSchema } from "@shared/schema";
+import { sendConnectionRequestEmail } from "./email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -172,6 +173,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/notifications/settings", isAuthenticated, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      res.json({
+        emailNotifications: user.emailNotifications,
+        textNotifications: user.textNotifications,
+      });
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.put("/api/notifications/settings", isAuthenticated, async (req, res) => {
+    const result = updateNotificationSettingsSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ message: "Invalid settings", errors: result.error.flatten().fieldErrors });
+    }
+    try {
+      const user = await storage.updateNotificationSettings(req.session.userId!, result.data);
+      res.json({
+        emailNotifications: user.emailNotifications,
+        textNotifications: user.textNotifications,
+      });
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/connections/unseen-count", isAuthenticated, async (req, res) => {
+    try {
+      const count = await storage.getUnseenRequestCount(req.session.userId!);
+      res.json({ count });
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/connections/mark-seen", isAuthenticated, async (req, res) => {
+    try {
+      await storage.updateLastSeenRequestsAt(req.session.userId!);
+      res.json({ success: true });
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.post("/api/connections/request", isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;
     const { receiverId } = req.body;
@@ -180,6 +228,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existing = await storage.getConnection(userId, receiverId);
       if (existing) return res.status(409).json({ message: "Connection already exists", connection: existing });
       const conn = await storage.createConnection(userId, receiverId);
+
+      const [requester, receiver] = await Promise.all([
+        storage.getUser(userId),
+        storage.getUser(receiverId),
+      ]);
+      if (receiver?.email && receiver.emailNotifications && requester) {
+        const requesterName = [requester.firstName, requester.lastName].filter(Boolean).join(" ") || "Someone";
+        sendConnectionRequestEmail(receiver.email, requesterName, requester.handle ?? null).catch(() => {});
+      }
+
       res.json(conn);
     } catch (err: any) {
       res.status(500).json({ message: "Server error" });

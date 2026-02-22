@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useLocation } from "wouter";
 import { PageLayout } from "@/components/PageLayout";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,7 +18,8 @@ import {
   FormMessage,
   FormLabel,
 } from "@/components/ui/form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Mail, MessageSquare, Bell } from "lucide-react";
 
 export const ProfileSetup = (): JSX.Element => {
   const [, setLocation] = useLocation();
@@ -61,6 +63,33 @@ export const ProfileSetup = (): JSX.Element => {
       toast({ title: "Failed to save profile", variant: "destructive" });
     },
   });
+
+  const { data: notifSettings } = useQuery<{ emailNotifications: boolean; textNotifications: boolean }>({
+    queryKey: ["/api/notifications/settings"],
+    enabled: !!user?.profileCompleted,
+  });
+
+  const updateNotifMutation = useMutation({
+    mutationFn: async (settings: { emailNotifications: boolean; textNotifications: boolean }) => {
+      const res = await apiRequest("PUT", "/api/notifications/settings", settings);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/settings"] });
+      toast({ title: "Notification settings updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update settings", variant: "destructive" });
+    },
+  });
+
+  const handleToggle = (key: "emailNotifications" | "textNotifications", value: boolean) => {
+    if (!notifSettings) return;
+    updateNotifMutation.mutate({
+      ...notifSettings,
+      [key]: value,
+    });
+  };
 
   const onSubmit = (data: UpdateProfile) => {
     saveProfileMutation.mutate(data);
@@ -188,6 +217,55 @@ export const ProfileSetup = (): JSX.Element => {
             </form>
           </Form>
         </div>
+
+        {user?.profileCompleted && (
+          <div className="bg-card rounded-2xl shadow-sm border border-border p-6 w-full mt-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Bell className="w-4 h-4 text-primary" />
+              <h3 className="text-foreground font-semibold text-sm">Notification Settings</h3>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Mail className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-foreground text-sm font-medium">Email Notifications</p>
+                    <p className="text-muted-foreground text-xs">Receive emails for connection requests</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={notifSettings?.emailNotifications ?? true}
+                  onCheckedChange={(checked) => handleToggle("emailNotifications", checked)}
+                  disabled={updateNotifMutation.isPending}
+                  data-testid="switch-email-notifications"
+                />
+              </div>
+
+              <div className="border-t border-border" />
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-foreground text-sm font-medium">Text Notifications</p>
+                    <p className="text-muted-foreground text-xs">Receive SMS for connection requests</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={notifSettings?.textNotifications ?? false}
+                  onCheckedChange={(checked) => handleToggle("textNotifications", checked)}
+                  disabled={updateNotifMutation.isPending}
+                  data-testid="switch-text-notifications"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </PageLayout>
   );

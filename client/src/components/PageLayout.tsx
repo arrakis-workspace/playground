@@ -2,6 +2,7 @@ import { UserAccountButton } from "@/components/UserAccountButton";
 import { CompanyFooter } from "@/components/CompanyFooter";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation, Link } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { LayoutDashboard, Users, MessageCircle, UserCircle } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -23,6 +24,14 @@ export function PageLayout({ children, showBottomNav = true, className = "" }: P
   const [location] = useLocation();
   const hasCompletedSetup = isAuthenticated && user?.profileCompleted && user?.handle;
 
+  const { data: unseenData } = useQuery<{ count: number }>({
+    queryKey: ["/api/connections/unseen-count"],
+    enabled: !!hasCompletedSetup,
+    refetchInterval: 30000,
+  });
+
+  const unseenCount = unseenData?.count ?? 0;
+
   return (
     <div className={`bg-background w-full min-h-screen flex flex-col ${className}`}>
       <header className="bg-card border-b border-border px-4 py-3 sm:px-6">
@@ -37,11 +46,12 @@ export function PageLayout({ children, showBottomNav = true, className = "" }: P
               <nav className="hidden lg:flex items-center gap-1" data-testid="nav-desktop">
                 {navItems.map((item) => {
                   const isActive = item.path === "/" ? location === "/" : location.startsWith(item.path);
+                  const showBadge = item.path === "/social" && unseenCount > 0;
                   return (
                     <Link
                       key={item.path}
                       href={item.path}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`relative flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                         isActive
                           ? "bg-primary/10 text-primary"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -50,6 +60,11 @@ export function PageLayout({ children, showBottomNav = true, className = "" }: P
                     >
                       <item.icon className="w-4 h-4" />
                       <span>{item.label}</span>
+                      {showBadge && (
+                        <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1" data-testid="badge-unseen-desktop">
+                          {unseenCount > 99 ? "99+" : unseenCount}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
@@ -69,10 +84,16 @@ export function PageLayout({ children, showBottomNav = true, className = "" }: P
           <div className="max-w-3xl mx-auto flex items-center justify-around">
             {navItems.map((item) => {
               const isActive = item.path === "/" ? location === "/" : location.startsWith(item.path);
+              const showBadge = item.path === "/social" && unseenCount > 0;
               return (
-                <Link key={item.path} href={item.path} className="flex flex-col items-center gap-0.5 py-1 px-3" data-testid={`nav-${item.label.toLowerCase()}`}>
+                <Link key={item.path} href={item.path} className="relative flex flex-col items-center gap-0.5 py-1 px-3" data-testid={`nav-${item.label.toLowerCase()}`}>
                   <item.icon className={`w-5 h-5 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                   <span className={`text-[10px] font-medium transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>{item.label}</span>
+                  {showBadge && (
+                    <span className="absolute -top-0.5 right-0 bg-destructive text-destructive-foreground text-[9px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-0.5" data-testid="badge-unseen-mobile">
+                      {unseenCount > 99 ? "99+" : unseenCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
