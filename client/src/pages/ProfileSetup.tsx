@@ -53,7 +53,7 @@ export const ProfileSetup = (): JSX.Element => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Profile saved successfully" });
       if (!user?.profileCompleted) {
-        setLocation("/investor-question");
+        setLocation("/link-institution");
       }
     },
     onError: () => {
