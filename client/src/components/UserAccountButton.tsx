@@ -8,12 +8,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings, Building2 } from "lucide-react";
+import { User, LogOut, Settings, Building2, LayoutDashboard } from "lucide-react";
 import { useLocation } from "wouter";
 
 export function UserAccountButton() {
   const { user, isAuthenticated, logout } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   if (!isAuthenticated || !user) {
     return (
@@ -52,12 +52,21 @@ export function UserAccountButton() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
+        {location !== "/" && (
+          <DropdownMenuItem
+            onClick={() => setLocation("/")}
+            data-testid="menu-item-dashboard"
+          >
+            <LayoutDashboard className="w-4 h-4 mr-2" />
+            Dashboard
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem
           onClick={() => setLocation("/profile-setup")}
           data-testid="menu-item-settings"
         >
           <Settings className="w-4 h-4 mr-2" />
-          Account Settings
+          Profile
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setLocation("/company")}

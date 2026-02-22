@@ -52,7 +52,9 @@ export const ProfileSetup = (): JSX.Element => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Profile saved successfully" });
-      setLocation("/investor-question");
+      if (!user?.profileCompleted) {
+        setLocation("/investor-question");
+      }
     },
     onError: () => {
       toast({ title: "Failed to save profile", variant: "destructive" });
@@ -77,7 +79,7 @@ export const ProfileSetup = (): JSX.Element => {
           className="font-['Aclonica',sans-serif] text-[#34e916] text-base md:text-lg leading-normal mt-4 w-full"
           data-testid="text-welcome"
         >
-          Welcome to Playground. Lets get started with play profile
+          Profile
         </p>
 
         <img
@@ -181,7 +183,7 @@ export const ProfileSetup = (): JSX.Element => {
               variant="secondary"
               data-testid="button-continue"
             >
-              {saveProfileMutation.isPending ? "Saving..." : "Save & Continue"}
+              {saveProfileMutation.isPending ? "Saving..." : user?.profileCompleted ? "Save" : "Save & Continue"}
             </Button>
           </form>
         </Form>
