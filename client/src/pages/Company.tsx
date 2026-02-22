@@ -8,7 +8,7 @@ export function Company() {
   return (
     <div className="bg-background w-full min-h-screen flex flex-col">
       <header className="bg-card border-b border-border px-4 py-3 sm:px-6">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5" data-testid="link-back-home">
             <img src="/figmaAssets/frame.svg" alt="Playground logo" className="w-8 h-8" data-testid="img-logo" />
             <span className="font-semibold text-foreground text-lg tracking-tight">Playground</span>

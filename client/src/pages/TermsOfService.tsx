@@ -6,7 +6,7 @@ export function TermsOfService() {
   return (
     <div className="bg-background min-h-screen flex flex-col">
       <header className="bg-card border-b border-border px-4 py-3 sm:px-6">
-        <div className="max-w-3xl mx-auto flex flex-wrap items-center gap-2 justify-between">
+        <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-2 justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <img src="/figmaAssets/frame.svg" alt="Playground logo" className="w-8 h-8" data-testid="img-logo" />
             <span className="font-semibold text-foreground text-lg tracking-tight">Playground</span>
@@ -15,7 +15,7 @@ export function TermsOfService() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-3xl mx-auto px-4 py-8 sm:px-6 w-full">
+      <main className="flex-1 max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8 w-full">
         <h1 className="text-3xl font-bold text-foreground mb-6" data-testid="text-terms-title">Terms of Service</h1>
         <p className="text-sm text-muted-foreground mb-8">Last updated: February 10, 2026</p>
 

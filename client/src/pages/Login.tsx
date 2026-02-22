@@ -8,7 +8,7 @@ export const Login = (): JSX.Element => {
 
   return (
     <PageLayout showBottomNav={false}>
-      <div className="flex flex-col items-center gap-8 w-full max-w-xs sm:max-w-sm md:max-w-md py-8">
+      <div className="flex flex-col items-center gap-8 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg py-8 lg:py-16">
         <img
           className="w-[80px] h-[80px] md:w-[100px] md:h-[100px]"
           alt="Playground logo"

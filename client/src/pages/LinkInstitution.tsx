@@ -34,7 +34,7 @@ export function LinkInstitution() {
 
   return (
     <PageLayout showBottomNav={false}>
-      <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md py-8">
+      <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg py-8 lg:py-16">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-semibold text-foreground tracking-tight" data-testid="text-link-title">
             Link your brokerage

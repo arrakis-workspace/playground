@@ -83,9 +83,9 @@ export function Social() {
 
   return (
     <PageLayout>
-      <div className="flex flex-col w-full max-w-xs sm:max-w-sm md:max-w-lg lg:max-w-2xl">
+      <div className="flex flex-col w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight" data-testid="text-social-title">
+          <h1 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight" data-testid="text-social-title">
             @{user?.handle || "social"}
           </h1>
           {pendingRequests.length > 0 && (
@@ -111,13 +111,13 @@ export function Social() {
         </div>
 
         {tab === "search" && (
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-4 max-w-lg">
             <Input
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
               placeholder="Search by name or handle..."
-              className="bg-white border-border h-11 rounded-xl text-sm"
+              className="bg-card border-border h-11 rounded-xl text-sm"
               data-testid="input-search-users"
             />
             <Button onClick={handleSearch} className="bg-primary text-primary-foreground h-11 rounded-xl px-4" data-testid="button-search">
@@ -126,14 +126,14 @@ export function Social() {
           </div>
         )}
 
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {tab === "connections" && connections.length === 0 && (
-            <div className="bg-white rounded-2xl border border-border p-8 text-center">
+            <div className="bg-card rounded-2xl border border-border p-8 text-center col-span-full">
               <p className="text-muted-foreground text-sm" data-testid="text-no-connections">No connections yet. Search for users to connect!</p>
             </div>
           )}
           {tab === "connections" && connections.map((c: any) => (
-            <div key={c.id} className="bg-white rounded-xl border border-border p-4 flex items-center justify-between" data-testid={`connection-${c.id}`}>
+            <div key={c.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between" data-testid={`connection-${c.id}`}>
               <div className="flex items-center gap-3">
                 <UserAvatar u={c} />
                 <div>
@@ -148,12 +148,12 @@ export function Social() {
           ))}
 
           {tab === "requests" && pendingRequests.length === 0 && (
-            <div className="bg-white rounded-2xl border border-border p-8 text-center">
+            <div className="bg-card rounded-2xl border border-border p-8 text-center col-span-full">
               <p className="text-muted-foreground text-sm" data-testid="text-no-requests">No pending requests</p>
             </div>
           )}
           {tab === "requests" && pendingRequests.map((p: any) => (
-            <div key={p.id} className="bg-white rounded-xl border border-border p-4 flex items-center justify-between" data-testid={`request-${p.id}`}>
+            <div key={p.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between" data-testid={`request-${p.id}`}>
               <div className="flex items-center gap-3">
                 <UserAvatar u={p.requester} />
                 <div>
@@ -173,7 +173,7 @@ export function Social() {
           ))}
 
           {tab === "search" && searchResults.map((u: any) => (
-            <div key={u.id} className="bg-white rounded-xl border border-border p-4 flex items-center justify-between" data-testid={`search-result-${u.id}`}>
+            <div key={u.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between" data-testid={`search-result-${u.id}`}>
               <div className="flex items-center gap-3">
                 <UserAvatar u={u} />
                 <div>

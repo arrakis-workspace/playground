@@ -68,7 +68,7 @@ export const ProfileSetup = (): JSX.Element => {
 
   return (
     <PageLayout>
-      <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md">
+      <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg">
         <div className="flex flex-col items-center mb-6">
           {user?.profileImageUrl ? (
             <img
