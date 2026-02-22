@@ -23,7 +23,7 @@ export function Company() {
 
           <div className="space-y-3">
             <Link href="/privacy-policy">
-              <Card className="bg-white border border-border rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+              <Card className="bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="bg-primary/10 rounded-xl p-2.5">
                     <Shield className="w-5 h-5 text-primary shrink-0" />
@@ -37,7 +37,7 @@ export function Company() {
             </Link>
 
             <Link href="/terms-of-service">
-              <Card className="bg-white border border-border rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+              <Card className="bg-card border border-border rounded-2xl shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="flex items-center gap-3 p-4">
                   <div className="bg-primary/10 rounded-xl p-2.5">
                     <FileText className="w-5 h-5 text-primary shrink-0" />

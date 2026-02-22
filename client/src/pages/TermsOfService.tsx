@@ -19,7 +19,7 @@ export function TermsOfService() {
         <h1 className="text-3xl font-bold text-foreground mb-6" data-testid="text-terms-title">Terms of Service</h1>
         <p className="text-sm text-muted-foreground mb-8">Last updated: February 10, 2026</p>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-border p-6 md:p-8 space-y-6 text-muted-foreground leading-relaxed">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 md:p-8 space-y-6 text-muted-foreground leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">1. Acceptance of Terms</h2>
             <p>By accessing and using Playground, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the application.</p>

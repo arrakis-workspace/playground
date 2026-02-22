@@ -44,7 +44,7 @@ export function LinkInstitution() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-border p-6 w-full">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 w-full">
           <div className="flex items-center gap-4 mb-5">
             <div className="bg-primary/10 rounded-xl p-3">
               <Building2 className="w-7 h-7 text-primary" />

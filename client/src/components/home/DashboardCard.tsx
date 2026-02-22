@@ -13,7 +13,7 @@ export function DashboardCard({ icon, title, description, testId, onClick }: Das
     <button
       onClick={onClick}
       data-testid={testId}
-      className="bg-white rounded-xl border border-border shadow-sm hover:shadow-md p-4 flex flex-col items-start gap-2 text-left transition-shadow cursor-pointer"
+      className="bg-card rounded-xl border border-border shadow-sm hover:shadow-md p-4 flex flex-col items-start gap-2 text-left transition-shadow cursor-pointer"
     >
       {icon}
       <span className="text-foreground font-semibold text-sm md:text-base">

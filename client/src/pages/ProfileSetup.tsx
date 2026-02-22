@@ -97,7 +97,7 @@ export const ProfileSetup = (): JSX.Element => {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-border p-6 w-full">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 w-full">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row gap-4 w-full">

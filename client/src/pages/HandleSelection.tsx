@@ -71,7 +71,7 @@ export function HandleSelection() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-border p-6 w-full">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 w-full">
           <div className="relative">
             <div className="flex items-center bg-muted/50 rounded-xl border border-border focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all">
               <span className="pl-4 text-muted-foreground text-sm font-medium">@</span>

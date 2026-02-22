@@ -12,7 +12,7 @@ export const InvestorQuestion = (): JSX.Element => {
   return (
     <PageLayout showBottomNav={false}>
       <div className="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg py-8 lg:py-16">
-        <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6">
           <div className="flex items-center gap-3 mb-6">
             <img
               className="w-9 h-9"

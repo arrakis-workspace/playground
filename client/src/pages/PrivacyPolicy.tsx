@@ -19,7 +19,7 @@ export function PrivacyPolicy() {
         <h1 className="text-3xl font-bold text-foreground mb-6" data-testid="text-privacy-title">Privacy Policy</h1>
         <p className="text-sm text-muted-foreground mb-8">Last updated: February 10, 2026</p>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-border p-6 md:p-8 space-y-6 text-muted-foreground leading-relaxed">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 md:p-8 space-y-6 text-muted-foreground leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">1. Information We Collect</h2>
             <p>When you use Playground, we collect information that you provide directly to us, including:</p>
