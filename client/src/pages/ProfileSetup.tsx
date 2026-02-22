@@ -75,13 +75,6 @@ export const ProfileSetup = (): JSX.Element => {
           data-testid="img-logo"
         />
 
-        <p
-          className="font-['Aclonica',sans-serif] text-[#34e916] text-base md:text-lg leading-normal mt-4 w-full"
-          data-testid="text-welcome"
-        >
-          Profile
-        </p>
-
         <img
           className="w-[100px] h-[100px] md:w-[125px] md:h-[125px] mt-4"
           alt="Profile"
