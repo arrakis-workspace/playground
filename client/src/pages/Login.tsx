@@ -26,7 +26,7 @@ export const Login = (): JSX.Element => {
             variant="outline"
             onClick={handleAuth}
             data-testid="button-signup-google"
-            className="h-12 rounded-xl flex items-center justify-center gap-3 text-sm font-medium border-border hover:bg-muted transition-colors"
+            className="h-12 rounded-xl flex items-center justify-center gap-3 text-sm font-medium border-border text-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <img className="w-5 h-5" alt="Google icon" src="/figmaAssets/logos-google-icon.svg" />
             <span>Sign up with Google</span>
@@ -35,7 +35,7 @@ export const Login = (): JSX.Element => {
             variant="outline"
             onClick={handleAuth}
             data-testid="button-login-google"
-            className="h-12 rounded-xl flex items-center justify-center gap-3 text-sm font-medium border-border hover:bg-muted transition-colors"
+            className="h-12 rounded-xl flex items-center justify-center gap-3 text-sm font-medium border-border text-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <img className="w-5 h-5" alt="Google icon" src="/figmaAssets/logos-google-icon.svg" />
             <span>Log in with Google</span>
