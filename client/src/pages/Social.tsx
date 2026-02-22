@@ -7,10 +7,12 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Search, UserPlus, Check, X, ArrowLeft, MessageCircle } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export function Social() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [tab, setTab] = useState<"connections" | "requests" | "search">("connections");
 
@@ -77,7 +79,7 @@ export function Social() {
           <button onClick={() => setLocation("/")} className="text-white" data-testid="button-back">
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="font-['Aclonica',sans-serif] text-white text-xl md:text-2xl" data-testid="text-social-title">Social</h1>
+          <h1 className="font-['Aclonica',sans-serif] text-white text-xl md:text-2xl" data-testid="text-social-title">@{user?.handle || "social"}</h1>
           {pendingRequests.length > 0 && (
             <span className="bg-[#34e916] text-black text-xs rounded-full px-2 py-0.5 font-bold">{pendingRequests.length}</span>
           )}

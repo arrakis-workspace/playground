@@ -83,9 +83,21 @@ export const ProfileSetup = (): JSX.Element => {
         <img
           className="w-[100px] h-[100px] md:w-[125px] md:h-[125px] mt-4"
           alt="Profile"
-          src="/figmaAssets/account-circle.svg"
+          src={user?.profileImageUrl || "/figmaAssets/account-circle.svg"}
+          style={{ borderRadius: user?.profileImageUrl ? "50%" : undefined }}
           data-testid="img-profile"
         />
+
+        {user && (user.firstName || user.lastName) && (
+          <p className="font-['Roboto',Helvetica] text-white text-lg font-medium mt-3" data-testid="text-user-name">
+            {[user.firstName, user.lastName].filter(Boolean).join(" ")}
+          </p>
+        )}
+        {user?.handle && (
+          <p className="font-['Roboto',Helvetica] text-white/60 text-sm" data-testid="text-user-handle">
+            @{user.handle}
+          </p>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="w-full mt-8 flex flex-col gap-4">
