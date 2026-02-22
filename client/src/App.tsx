@@ -58,9 +58,11 @@ function Router() {
           <Route path="/chat/:userId?" component={ChatPage} />
           <Route path="/" component={Home} />
 
-          {!user?.profileCompleted && (
+          {!user?.profileCompleted ? (
             <Route><Redirect to="/profile-setup" /></Route>
-          )}
+          ) : !user?.handle ? (
+            <Route><Redirect to="/handle-selection" /></Route>
+          ) : null}
 
           <Route component={NotFound} />
         </>

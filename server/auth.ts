@@ -141,7 +141,12 @@ export async function setupAuth(app: Express) {
       });
 
       req.session.userId = user.id;
-      const redirectTo = user.profileCompleted ? "/" : "/profile-setup";
+      let redirectTo = "/profile-setup";
+      if (user.profileCompleted && !user.handle) {
+        redirectTo = "/handle-selection";
+      } else if (user.profileCompleted && user.handle) {
+        redirectTo = "/";
+      }
       req.session.save((err) => {
         if (err) console.error("Session save error:", err);
         res.redirect(redirectTo);
