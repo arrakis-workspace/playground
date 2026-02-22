@@ -60,53 +60,54 @@ export function HandleSelection() {
   const isValid = handle.length >= 3 && /^[a-z0-9_]+$/.test(handle) && availability === "available";
 
   return (
-    <PageLayout>
-      <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md">
-        <img className="w-[60px] h-[60px] md:w-[75px] md:h-[75px]" alt="Playground logo" src="/figmaAssets/frame.svg" data-testid="img-logo" />
-
-        <h2 className="font-['Aclonica',sans-serif] text-[#34e916] text-xl md:text-2xl mt-6 text-center" data-testid="text-handle-title">
-          Choose your handle
-        </h2>
-        <p className="text-white/80 font-['Roboto',Helvetica] text-sm mt-2 text-center" data-testid="text-handle-subtitle">
-          This is how other investors will find you
-        </p>
-
-        <div className="w-full mt-8 relative">
-          <div className="flex items-center bg-white rounded-md">
-            <span className="pl-3 text-gray-500 font-['Roboto',Helvetica] text-sm">@</span>
-            <Input
-              value={handle}
-              onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-              placeholder="your_handle"
-              data-testid="input-handle"
-              className="h-[50px] bg-transparent text-black border-none font-['Roboto',Helvetica] text-sm focus-visible:ring-0"
-            />
-            <div className="pr-3">
-              {availability === "checking" && <Loader2 className="w-5 h-5 animate-spin text-gray-400" />}
-              {availability === "available" && <Check className="w-5 h-5 text-green-600" />}
-              {availability === "taken" && <X className="w-5 h-5 text-red-500" />}
-            </div>
-          </div>
-          {availability === "taken" && (
-            <p className="text-yellow-200 text-xs mt-1" data-testid="text-handle-taken">This handle is already taken</p>
-          )}
-          <p className="text-white/60 text-xs mt-2">Lowercase letters, numbers, and underscores only. 3-30 characters.</p>
+    <PageLayout showBottomNav={false}>
+      <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md py-8">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-semibold text-foreground tracking-tight" data-testid="text-handle-title">
+            Choose your handle
+          </h2>
+          <p className="text-muted-foreground text-sm mt-2" data-testid="text-handle-subtitle">
+            This is how other investors will find you
+          </p>
         </div>
 
-        <Button
-          onClick={() => saveMutation.mutate()}
-          disabled={!isValid || saveMutation.isPending}
-          className="mt-6 h-[50px] bg-white hover:bg-white/90 text-black rounded-md font-['Aclonica',sans-serif] text-sm w-full"
-          variant="secondary"
-          data-testid="button-save-handle"
-        >
-          {saveMutation.isPending ? "Saving..." : "Continue"}
-        </Button>
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-6 w-full">
+          <div className="relative">
+            <div className="flex items-center bg-muted/50 rounded-xl border border-border focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-all">
+              <span className="pl-4 text-muted-foreground text-sm font-medium">@</span>
+              <Input
+                value={handle}
+                onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                placeholder="your_handle"
+                data-testid="input-handle"
+                className="h-11 bg-transparent border-none text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <div className="pr-3">
+                {availability === "checking" && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                {availability === "available" && <Check className="w-4 h-4 text-emerald-500" />}
+                {availability === "taken" && <X className="w-4 h-4 text-destructive" />}
+              </div>
+            </div>
+            {availability === "taken" && (
+              <p className="text-destructive text-xs mt-1.5" data-testid="text-handle-taken">This handle is already taken</p>
+            )}
+            <p className="text-muted-foreground text-xs mt-2">Lowercase letters, numbers, and underscores only. 3-30 characters.</p>
+          </div>
+
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={!isValid || saveMutation.isPending}
+            className="mt-5 h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium w-full"
+            data-testid="button-save-handle"
+          >
+            {saveMutation.isPending ? "Saving..." : "Continue"}
+          </Button>
+        </div>
 
         <Button
           variant="ghost"
           onClick={() => setLocation("/link-institution")}
-          className="mt-2 text-white/60 hover:text-white text-sm"
+          className="mt-3 text-muted-foreground text-sm"
           data-testid="button-skip-handle"
         >
           Skip for now

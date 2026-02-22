@@ -15,6 +15,7 @@ import {
   FormItem,
   FormControl,
   FormMessage,
+  FormLabel,
 } from "@/components/ui/form";
 import { useMutation } from "@tanstack/react-query";
 
@@ -68,118 +69,125 @@ export const ProfileSetup = (): JSX.Element => {
   return (
     <PageLayout>
       <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md">
-        <img
-          className="w-[60px] h-[60px] md:w-[75px] md:h-[75px]"
-          alt="Playground logo"
-          src="/figmaAssets/frame.svg"
-          data-testid="img-logo"
-        />
-
-        <img
-          className="w-[100px] h-[100px] md:w-[125px] md:h-[125px] mt-4"
-          alt="Profile"
-          src={user?.profileImageUrl || "/figmaAssets/account-circle.svg"}
-          style={{ borderRadius: user?.profileImageUrl ? "50%" : undefined }}
-          data-testid="img-profile"
-        />
-
-        {user && (user.firstName || user.lastName) && (
-          <p className="font-['Roboto',Helvetica] text-white text-lg font-medium mt-3" data-testid="text-user-name">
-            {[user.firstName, user.lastName].filter(Boolean).join(" ")}
-          </p>
-        )}
-        {user?.handle && (
-          <p className="font-['Roboto',Helvetica] text-white/60 text-sm" data-testid="text-user-handle">
-            @{user.handle}
-          </p>
-        )}
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full mt-8 flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 w-full">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input
-                        placeholder="First Name"
-                        {...field}
-                        data-testid="input-first-name"
-                        className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-yellow-200" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormControl>
-                      <Input
-                        placeholder="Last Name"
-                        {...field}
-                        data-testid="input-last-name"
-                        className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-yellow-200" />
-                  </FormItem>
-                )}
-              />
+        <div className="flex flex-col items-center mb-6">
+          {user?.profileImageUrl ? (
+            <img
+              className="w-20 h-20 rounded-full object-cover shadow-sm"
+              alt="Profile"
+              src={user.profileImageUrl}
+              data-testid="img-profile"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center" data-testid="img-profile">
+              <span className="text-primary text-2xl font-semibold">
+                {(user?.firstName?.[0] || "U").toUpperCase()}
+              </span>
             </div>
+          )}
 
-            <FormField
-              control={form.control}
-              name="contactNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      placeholder="Contact number"
-                      {...field}
-                      data-testid="input-contact"
-                      className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full"
-                    />
-                  </FormControl>
-                  <FormMessage className="text-yellow-200" />
-                </FormItem>
-              )}
-            />
+          {user && (user.firstName || user.lastName) && (
+            <p className="text-foreground text-lg font-semibold mt-3" data-testid="text-user-name">
+              {[user.firstName, user.lastName].filter(Boolean).join(" ")}
+            </p>
+          )}
+          {user?.handle && (
+            <p className="text-muted-foreground text-sm" data-testid="text-user-handle">
+              @{user.handle}
+            </p>
+          )}
+        </div>
 
-            <FormField
-              control={form.control}
-              name="country"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Input
-                      placeholder="Country of residence"
-                      {...field}
-                      data-testid="input-country"
-                      className="h-[50px] bg-white text-black rounded-md font-['Aclonica',sans-serif] text-sm border-none w-full"
-                    />
-                  </FormControl>
-                  <FormMessage className="text-yellow-200" />
-                </FormItem>
-              )}
-            />
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-6 w-full">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 w-full">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel className="text-xs text-muted-foreground">First Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="First Name"
+                          {...field}
+                          data-testid="input-first-name"
+                          className="h-11 rounded-xl bg-muted/50 border-border text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel className="text-xs text-muted-foreground">Last Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Last Name"
+                          {...field}
+                          data-testid="input-last-name"
+                          className="h-11 rounded-xl bg-muted/50 border-border text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-            <Button
-              type="submit"
-              disabled={saveProfileMutation.isPending}
-              className="mt-4 h-[50px] bg-white hover:bg-white/90 text-black rounded-md font-['Aclonica',sans-serif] text-sm w-full"
-              variant="secondary"
-              data-testid="button-continue"
-            >
-              {saveProfileMutation.isPending ? "Saving..." : user?.profileCompleted ? "Save" : "Save & Continue"}
-            </Button>
-          </form>
-        </Form>
+              <FormField
+                control={form.control}
+                name="contactNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs text-muted-foreground">Contact Number</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Contact number"
+                        {...field}
+                        data-testid="input-contact"
+                        className="h-11 rounded-xl bg-muted/50 border-border text-sm w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs text-muted-foreground">Country of Residence</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Country of residence"
+                        {...field}
+                        data-testid="input-country"
+                        className="h-11 rounded-xl bg-muted/50 border-border text-sm w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                disabled={saveProfileMutation.isPending}
+                className="mt-2 h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium w-full"
+                data-testid="button-continue"
+              >
+                {saveProfileMutation.isPending ? "Saving..." : user?.profileCompleted ? "Save" : "Save & Continue"}
+              </Button>
+            </form>
+          </Form>
+        </div>
       </div>
     </PageLayout>
   );

@@ -24,8 +24,8 @@ function Router() {
 
   if (isLoading) {
     return (
-      <div className="bg-[#2e99e6] w-full min-h-screen flex items-center justify-center">
-        <div className="text-white text-lg font-['Roboto',Helvetica]" data-testid="text-loading">Loading...</div>
+      <div className="bg-background w-full min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground text-sm font-medium" data-testid="text-loading">Loading...</div>
       </div>
     );
   }

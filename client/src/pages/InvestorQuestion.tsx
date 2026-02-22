@@ -10,43 +10,42 @@ export const InvestorQuestion = (): JSX.Element => {
   };
 
   return (
-    <PageLayout>
-      <div className="w-full max-w-xs sm:max-w-sm md:max-w-md">
-        <div className="flex items-center gap-3 mb-8">
-          <img
-            className="w-9 h-9"
-            alt="Playground logo"
-            src="/figmaAssets/frame.svg"
-            data-testid="img-logo"
-          />
-        </div>
+    <PageLayout showBottomNav={false}>
+      <div className="w-full max-w-xs sm:max-w-sm md:max-w-md py-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <img
+              className="w-9 h-9"
+              alt="Playground logo"
+              src="/figmaAssets/frame.svg"
+              data-testid="img-logo"
+            />
+          </div>
 
-        <div className="bg-[#1c6399] rounded-[9px] px-4 py-3 mb-6">
           <p
-            className="font-['Ubuntu',sans-serif] text-white text-xl md:text-2xl leading-normal"
+            className="text-foreground text-xl md:text-2xl font-semibold leading-normal mb-8"
             data-testid="text-question"
           >
-            Are you new investor?
+            Are you a new investor?
           </p>
-        </div>
 
-        <div className="flex gap-6 justify-center">
-          <Button
-            variant="secondary"
-            onClick={handleAnswer}
-            data-testid="button-yes"
-            className="h-[42px] w-[90px] bg-white hover:bg-white/90 text-black rounded-md font-['Ubuntu',sans-serif] text-xl md:text-2xl"
-          >
-            Yes
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={handleAnswer}
-            data-testid="button-no"
-            className="h-[42px] w-[90px] bg-white hover:bg-white/90 text-black rounded-md font-['Ubuntu',sans-serif] text-xl md:text-2xl"
-          >
-            No
-          </Button>
+          <div className="flex gap-4 justify-center">
+            <Button
+              onClick={handleAnswer}
+              data-testid="button-yes"
+              className="h-11 w-24 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-base"
+            >
+              Yes
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleAnswer}
+              data-testid="button-no"
+              className="h-11 w-24 rounded-xl border-border font-medium text-base"
+            >
+              No
+            </Button>
+          </div>
         </div>
       </div>
     </PageLayout>

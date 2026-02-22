@@ -27,24 +27,23 @@ export function SnaptradeCallback() {
   }, []);
 
   return (
-    <PageLayout>
-      <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md text-center">
+    <PageLayout showBottomNav={false}>
+      <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-md text-center py-16">
         {status === "syncing" && (
           <>
-            <Loader2 className="w-16 h-16 text-white animate-spin mb-4" />
-            <h2 className="text-white font-['Aclonica',sans-serif] text-xl" data-testid="text-syncing">Syncing your accounts...</h2>
-            <p className="text-white/70 mt-2 text-sm">This may take a moment</p>
+            <Loader2 className="w-14 h-14 text-primary animate-spin mb-5" />
+            <h2 className="text-foreground font-semibold text-xl" data-testid="text-syncing">Syncing your accounts...</h2>
+            <p className="text-muted-foreground mt-2 text-sm">This may take a moment</p>
           </>
         )}
         {status === "success" && (
           <>
-            <CheckCircle2 className="w-16 h-16 text-[#34e916] mb-4" />
-            <h2 className="text-white font-['Aclonica',sans-serif] text-xl" data-testid="text-success">Accounts linked!</h2>
-            <p className="text-white/70 mt-2 text-sm">{accountCount} account{accountCount !== 1 ? "s" : ""} connected successfully</p>
+            <CheckCircle2 className="w-14 h-14 text-emerald-500 mb-5" />
+            <h2 className="text-foreground font-semibold text-xl" data-testid="text-success">Accounts linked!</h2>
+            <p className="text-muted-foreground mt-2 text-sm">{accountCount} account{accountCount !== 1 ? "s" : ""} connected successfully</p>
             <Button
               onClick={() => setLocation("/")}
-              className="mt-6 h-[50px] bg-white hover:bg-white/90 text-black rounded-md font-['Aclonica',sans-serif] text-sm w-full max-w-[200px]"
-              variant="secondary"
+              className="mt-6 h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium px-8"
               data-testid="button-go-dashboard"
             >
               Go to Dashboard
@@ -53,14 +52,14 @@ export function SnaptradeCallback() {
         )}
         {status === "error" && (
           <>
-            <XCircle className="w-16 h-16 text-red-400 mb-4" />
-            <h2 className="text-white font-['Aclonica',sans-serif] text-xl" data-testid="text-error">Something went wrong</h2>
-            <p className="text-white/70 mt-2 text-sm">We couldn't sync your accounts. Please try again.</p>
+            <XCircle className="w-14 h-14 text-destructive mb-5" />
+            <h2 className="text-foreground font-semibold text-xl" data-testid="text-error">Something went wrong</h2>
+            <p className="text-muted-foreground mt-2 text-sm">We couldn't sync your accounts. Please try again.</p>
             <div className="flex gap-3 mt-6">
-              <Button onClick={() => setLocation("/link-institution")} className="bg-white hover:bg-white/90 text-black" variant="secondary" data-testid="button-try-again">
+              <Button onClick={() => setLocation("/link-institution")} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground" data-testid="button-try-again">
                 Try Again
               </Button>
-              <Button onClick={() => setLocation("/")} variant="ghost" className="text-white" data-testid="button-skip">
+              <Button onClick={() => setLocation("/")} variant="outline" className="rounded-xl" data-testid="button-skip">
                 Skip
               </Button>
             </div>

@@ -19,40 +19,42 @@ function ConversationList() {
     queryKey: ["/api/connections"],
   });
 
+  function UserAvatar({ u, size = "md" }: { u: any; size?: "md" | "lg" }) {
+    const s = size === "lg" ? "w-12 h-12" : "w-10 h-10";
+    const ts = size === "lg" ? "text-sm" : "text-xs";
+    if (u.profileImageUrl) return <img src={u.profileImageUrl} alt="" className={`${s} rounded-full object-cover`} />;
+    return (
+      <div className={`${s} rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold ${ts}`}>
+        {(u.firstName?.[0] || "?").toUpperCase()}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col w-full max-w-xs sm:max-w-sm md:max-w-lg lg:max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => setLocation("/")} className="text-white" data-testid="button-back">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="font-['Aclonica',sans-serif] text-white text-xl md:text-2xl" data-testid="text-chat-title">Messages</h1>
-      </div>
+      <h1 className="text-2xl font-semibold text-foreground tracking-tight mb-6" data-testid="text-chat-title">Messages</h1>
 
       {conversations.length === 0 && connections.length === 0 && (
-        <p className="text-white/50 text-sm text-center py-8" data-testid="text-no-conversations">No conversations yet. Connect with someone to start chatting!</p>
+        <div className="bg-white rounded-2xl border border-border p-8 text-center">
+          <p className="text-muted-foreground text-sm" data-testid="text-no-conversations">No conversations yet. Connect with someone to start chatting!</p>
+        </div>
       )}
 
       {conversations.length > 0 && (
-        <div className="space-y-2 mb-4">
+        <div className="space-y-2 mb-5">
           {conversations.map((c: any) => (
             <button
               key={c.user.id}
               onClick={() => setLocation(`/chat/${c.user.id}`)}
-              className="bg-white/10 rounded-xl p-4 flex items-center gap-3 w-full text-left hover:bg-white/20 transition-colors"
+              className="bg-white rounded-xl border border-border p-4 flex items-center gap-3 w-full text-left hover:bg-muted/50 transition-colors"
               data-testid={`conversation-${c.user.id}`}
             >
-              {c.user.profileImageUrl ? (
-                <img src={c.user.profileImageUrl} alt="" className="w-10 h-10 rounded-full" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
-                  {(c.user.firstName?.[0] || "?").toUpperCase()}
-                </div>
-              )}
+              <UserAvatar u={c.user} />
               <div className="flex-1 min-w-0">
-                <p className="text-white font-medium text-sm">{c.user.firstName} {c.user.lastName}</p>
-                <p className="text-white/50 text-xs truncate">{c.lastMessage.content}</p>
+                <p className="text-foreground font-medium text-sm">{c.user.firstName} {c.user.lastName}</p>
+                <p className="text-muted-foreground text-xs truncate">{c.lastMessage.content}</p>
               </div>
-              <span className="text-white/30 text-xs">
+              <span className="text-muted-foreground/60 text-xs shrink-0">
                 {new Date(c.lastMessage.createdAt).toLocaleDateString()}
               </span>
             </button>
@@ -62,23 +64,17 @@ function ConversationList() {
 
       {connections.length > 0 && (
         <>
-          <h3 className="text-white/60 text-xs uppercase tracking-wider mb-2 mt-4">Connections</h3>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3 mt-2">Connections</h3>
+          <div className="flex gap-4 overflow-x-auto pb-2">
             {connections.map((c: any) => (
               <button
                 key={c.id}
                 onClick={() => setLocation(`/chat/${c.id}`)}
-                className="flex flex-col items-center gap-1 min-w-[60px]"
+                className="flex flex-col items-center gap-1.5 min-w-[56px]"
                 data-testid={`quick-chat-${c.id}`}
               >
-                {c.profileImageUrl ? (
-                  <img src={c.profileImageUrl} alt="" className="w-12 h-12 rounded-full" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
-                    {(c.firstName?.[0] || "?").toUpperCase()}
-                  </div>
-                )}
-                <span className="text-white/70 text-[10px] truncate max-w-[60px]">{c.firstName}</span>
+                <UserAvatar u={c} size="lg" />
+                <span className="text-muted-foreground text-[10px] truncate max-w-[56px]">{c.firstName}</span>
               </button>
             ))}
           </div>
@@ -123,32 +119,32 @@ function ChatThread({ userId }: { userId: string }) {
 
   return (
     <div className="flex flex-col w-full max-w-xs sm:max-w-sm md:max-w-lg lg:max-w-2xl h-[calc(100vh-200px)]">
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => setLocation("/chat")} className="text-white" data-testid="button-back-chat">
-          <ArrowLeft className="w-6 h-6" />
+      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border">
+        <button onClick={() => setLocation("/chat")} className="text-muted-foreground hover:text-foreground transition-colors" data-testid="button-back-chat">
+          <ArrowLeft className="w-5 h-5" />
         </button>
         {otherUser && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {otherUser.profileImageUrl ? (
-              <img src={otherUser.profileImageUrl} alt="" className="w-8 h-8 rounded-full" />
+              <img src={otherUser.profileImageUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
                 {(otherUser.firstName?.[0] || "?").toUpperCase()}
               </div>
             )}
-            <span className="text-white font-medium" data-testid="text-chat-user">{otherUser.firstName} {otherUser.lastName}</span>
+            <span className="text-foreground font-medium text-sm" data-testid="text-chat-user">{otherUser.firstName} {otherUser.lastName}</span>
           </div>
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+      <div className="flex-1 overflow-y-auto space-y-2.5 mb-4">
         {sorted.map((msg: any) => {
           const isMe = msg.senderId === currentUser?.id;
           return (
             <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`} data-testid={`message-${msg.id}`}>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-2 ${isMe ? "bg-[#34e916] text-black" : "bg-white/20 text-white"}`}>
+              <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${isMe ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>
                 <p className="text-sm">{msg.content}</p>
-                <p className="text-[10px] opacity-50 mt-1">
+                <p className={`text-[10px] mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
@@ -164,13 +160,13 @@ function ChatThread({ userId }: { userId: string }) {
           onChange={e => setMessage(e.target.value)}
           onKeyDown={e => e.key === "Enter" && message.trim() && sendMsg.mutate()}
           placeholder="Type a message..."
-          className="bg-white text-black border-none h-[42px] flex-1"
+          className="bg-white border-border h-11 rounded-xl flex-1 text-sm"
           data-testid="input-message"
         />
         <Button
           onClick={() => message.trim() && sendMsg.mutate()}
           disabled={!message.trim() || sendMsg.isPending}
-          className="bg-[#34e916] text-black h-[42px] px-4"
+          className="bg-primary text-primary-foreground h-11 px-4 rounded-xl"
           data-testid="button-send"
         >
           <Send className="w-4 h-4" />

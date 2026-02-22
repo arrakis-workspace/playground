@@ -13,13 +13,13 @@ export function DashboardCard({ icon, title, description, testId, onClick }: Das
     <button
       onClick={onClick}
       data-testid={testId}
-      className="bg-white/10 hover:bg-white/20 rounded-xl p-4 flex flex-col items-start gap-2 text-left transition-colors cursor-pointer"
+      className="bg-white rounded-xl border border-border shadow-sm hover:shadow-md p-4 flex flex-col items-start gap-2 text-left transition-shadow cursor-pointer"
     >
       {icon}
-      <span className="font-['Aclonica',sans-serif] text-white text-sm md:text-base">
+      <span className="text-foreground font-semibold text-sm md:text-base">
         {title}
       </span>
-      <span className="text-white/60 font-['Roboto',Helvetica] text-xs md:text-sm">
+      <span className="text-muted-foreground text-xs md:text-sm">
         {description}
       </span>
     </button>

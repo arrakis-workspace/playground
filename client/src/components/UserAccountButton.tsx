@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, Settings, Building2, LayoutDashboard } from "lucide-react";
+import { User, LogOut, LayoutDashboard, UserCircle, Building2 } from "lucide-react";
 import { useLocation } from "wouter";
 
 export function UserAccountButton() {
@@ -18,8 +18,8 @@ export function UserAccountButton() {
   if (!isAuthenticated || !user) {
     return (
       <a href="/login" data-testid="button-login">
-        <Button variant="outline" className="text-white border-white/30 bg-white/10">
-          <User className="w-5 h-5 mr-2" />
+        <Button variant="outline" size="sm" className="gap-2">
+          <User className="w-4 h-4" />
           <span>Login</span>
         </Button>
       </a>
@@ -36,19 +36,20 @@ export function UserAccountButton() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
-          className="text-white border-white/30 bg-white/10 gap-2"
+          variant="ghost"
+          size="sm"
+          className="gap-2 hover:bg-muted"
           data-testid="button-user-menu"
         >
           <Avatar className="h-7 w-7">
             {user.profileImageUrl && (
               <AvatarImage src={user.profileImageUrl} alt={displayName} />
             )}
-            <AvatarFallback className="text-xs bg-white/20 text-white">
+            <AvatarFallback className="text-xs bg-primary/10 text-primary font-medium">
               {initials || "U"}
             </AvatarFallback>
           </Avatar>
-          <span className="hidden sm:inline">{displayName}</span>
+          <span className="hidden sm:inline text-sm font-medium text-foreground">{displayName}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
@@ -65,7 +66,7 @@ export function UserAccountButton() {
           onClick={() => setLocation("/profile-setup")}
           data-testid="menu-item-settings"
         >
-          <Settings className="w-4 h-4 mr-2" />
+          <UserCircle className="w-4 h-4 mr-2" />
           Profile
         </DropdownMenuItem>
         <DropdownMenuItem

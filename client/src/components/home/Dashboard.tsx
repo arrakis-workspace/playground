@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useState } from "react";
-import { TrendingUp, Users, MessageCircle, Building2, Settings, Search } from "lucide-react";
+import { Building2, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DashboardProps {
@@ -54,23 +54,23 @@ export function Dashboard({ user }: DashboardProps) {
   }
 
   return (
-    <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm md:max-w-lg lg:max-w-2xl">
-      <div className="flex items-center gap-3 mb-2 self-start w-full">
-        <img className="w-10 h-10" alt="Playground logo" src="/figmaAssets/frame.svg" data-testid="img-dashboard-logo" />
-        <h1 className="font-['Aclonica',sans-serif] text-[#34e916] text-2xl md:text-3xl flex-1" data-testid="text-greeting">
+    <div className="flex flex-col w-full max-w-xs sm:max-w-sm md:max-w-lg lg:max-w-2xl">
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight" data-testid="text-greeting">
           Hey {displayName}!
         </h1>
+        {user.handle && (
+          <p className="text-muted-foreground text-sm mt-0.5" data-testid="text-handle">@{user.handle}</p>
+        )}
       </div>
 
-      {user.handle && (
-        <p className="text-white/50 text-sm self-start mb-4 font-['Roboto',Helvetica]" data-testid="text-handle">@{user.handle}</p>
-      )}
-
-      <div className="bg-white/10 rounded-xl p-5 w-full mb-4">
-        <p className="text-white/60 text-xs font-['Roboto',Helvetica] uppercase tracking-wider mb-1" data-testid="text-portfolio-label">Total Portfolio Value</p>
-        <p className="text-white font-['Roboto',Helvetica] text-3xl md:text-4xl font-bold" data-testid="text-portfolio-value">
-          ${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </p>
+      <div className="bg-white rounded-2xl shadow-sm border border-border p-5 mb-4">
+        <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-1" data-testid="text-portfolio-label">Total Portfolio Value</p>
+        <div className="flex items-baseline gap-2">
+          <p className="text-foreground text-3xl md:text-4xl font-bold tracking-tight" data-testid="text-portfolio-value">
+            ${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
 
         {chartData.length > 1 && (
           <div className="mt-4 h-[180px] md:h-[220px]">
@@ -78,29 +78,29 @@ export function Dashboard({ user }: DashboardProps) {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#34e916" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#34e916" stopOpacity={0} />
+                    <stop offset="5%" stopColor="hsl(239, 84%, 67%)" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="hsl(239, 84%, 67%)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="date" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="date" tick={{ fill: "hsl(215, 16%, 47%)", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis hide domain={["dataMin", "dataMax"]} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#1c6399", border: "none", borderRadius: "8px", color: "#fff", fontSize: 13 }}
+                  contentStyle={{ backgroundColor: "#fff", border: "1px solid hsl(220, 13%, 89%)", borderRadius: "12px", fontSize: 13, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
                   formatter={(value: number) => [`$${value.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, "Value"]}
                 />
-                <Area type="monotone" dataKey="value" stroke="#34e916" strokeWidth={2} fill="url(#colorValue)" />
+                <Area type="monotone" dataKey="value" stroke="hsl(239, 84%, 67%)" strokeWidth={2} fill="url(#colorValue)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         )}
 
-        <div className="flex gap-1 mt-3 flex-wrap">
+        <div className="flex gap-1.5 mt-3 flex-wrap">
           {TIME_RANGES.map(r => (
             <button
               key={r.label}
               onClick={() => setTimeRange(r.label)}
-              className={`px-3 py-1 rounded-full text-xs font-['Roboto',Helvetica] transition-colors ${
-                timeRange === r.label ? "bg-[#34e916] text-black font-medium" : "bg-white/10 text-white/70 hover:bg-white/20"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                timeRange === r.label ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
               data-testid={`button-range-${r.label}`}
             >
@@ -111,68 +111,54 @@ export function Dashboard({ user }: DashboardProps) {
       </div>
 
       {holdingsData.length > 0 && (
-        <div className="bg-white/10 rounded-xl p-5 w-full mb-4">
-          <h3 className="text-white font-['Roboto',Helvetica] font-medium mb-3" data-testid="text-holdings-title">Holdings</h3>
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-5 mb-4">
+          <h3 className="text-foreground font-semibold mb-4" data-testid="text-holdings-title">Holdings</h3>
           <div className="space-y-3">
-            {holdingsData.map((h: any) => (
-              <div key={h.id} className="flex items-center justify-between" data-testid={`holding-${h.symbol}`}>
-                <div>
-                  <p className="text-white font-['Roboto',Helvetica] font-medium text-sm">{h.symbol}</p>
-                  <p className="text-white/50 text-xs">{h.name}</p>
+            {holdingsData.map((h: any) => {
+              const value = parseFloat(h.totalValue);
+              const cost = h.costBasis ? parseFloat(h.costBasis) * parseFloat(h.quantity) : null;
+              const gain = cost ? value - cost : null;
+              const isPositive = gain !== null && gain >= 0;
+              return (
+                <div key={h.id} className="flex items-center justify-between py-2 border-b border-border last:border-0" data-testid={`holding-${h.symbol}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary text-xs font-bold">{h.symbol?.slice(0, 2)}</span>
+                    </div>
+                    <div>
+                      <p className="text-foreground font-medium text-sm">{h.symbol}</p>
+                      <p className="text-muted-foreground text-xs">{h.name}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-foreground font-medium text-sm">
+                      ${value.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    </p>
+                    <p className="text-muted-foreground text-xs">{parseFloat(h.quantity).toFixed(2)} shares</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-white font-['Roboto',Helvetica] font-medium text-sm">
-                    ${parseFloat(h.totalValue).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                  </p>
-                  <p className="text-white/50 text-xs">{parseFloat(h.quantity).toFixed(2)} shares</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
       {holdingsData.length === 0 && (
-        <div className="bg-white/10 rounded-xl p-6 w-full mb-4 text-center">
-          <Building2 className="w-10 h-10 text-white/30 mx-auto mb-3" />
-          <p className="text-white/70 font-['Roboto',Helvetica] text-sm" data-testid="text-no-holdings">No linked accounts yet</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-border p-8 mb-4 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+            <Building2 className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <p className="text-foreground font-medium" data-testid="text-no-holdings">No linked accounts yet</p>
+          <p className="text-muted-foreground text-sm mt-1">Connect a brokerage to see your portfolio</p>
           <Button
             onClick={() => setLocation("/link-institution")}
-            variant="secondary"
-            className="mt-3 bg-white hover:bg-white/90 text-black text-sm"
+            className="mt-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm"
             data-testid="button-link-from-dashboard"
           >
             Link a Brokerage
           </Button>
         </div>
       )}
-
-      <div className="grid grid-cols-3 gap-3 w-full">
-        <button
-          onClick={() => setLocation("/social")}
-          className="bg-white/10 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-white/20 transition-colors"
-          data-testid="button-nav-social"
-        >
-          <Users className="w-6 h-6 text-[#34e916]" />
-          <span className="text-white text-xs font-['Roboto',Helvetica]">Social</span>
-        </button>
-        <button
-          onClick={() => setLocation("/chat")}
-          className="bg-white/10 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-white/20 transition-colors"
-          data-testid="button-nav-chat"
-        >
-          <MessageCircle className="w-6 h-6 text-[#34e916]" />
-          <span className="text-white text-xs font-['Roboto',Helvetica]">Chat</span>
-        </button>
-        <button
-          onClick={() => setLocation("/profile-setup")}
-          className="bg-white/10 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-white/20 transition-colors"
-          data-testid="button-nav-settings"
-        >
-          <Settings className="w-6 h-6 text-[#34e916]" />
-          <span className="text-white text-xs font-['Roboto',Helvetica]">Settings</span>
-        </button>
-      </div>
     </div>
   );
 }

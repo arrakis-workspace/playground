@@ -1,24 +1,24 @@
 export function PublicLanding() {
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-6 py-12">
       <img
-        className="w-[100px] h-[100px] md:w-[125px] md:h-[125px]"
+        className="w-[80px] h-[80px] md:w-[100px] md:h-[100px]"
         alt="Playground logo"
         src="/figmaAssets/frame.svg"
         data-testid="img-logo"
       />
       <h1
-        className="font-['Aclonica',sans-serif] text-[#34e916] text-4xl md:text-5xl"
+        className="font-semibold text-foreground text-4xl md:text-5xl tracking-tight"
         data-testid="text-app-name"
       >
         Playground
       </h1>
       <p
-        className="text-white/90 text-lg md:text-xl text-center max-w-xs sm:max-w-sm px-2 font-['Aclonica',sans-serif]"
+        className="text-muted-foreground text-base md:text-lg text-center max-w-sm px-4 leading-relaxed"
         data-testid="text-tagline"
       >
         Social investing made fun.<br />
-        Private and secure way to consolidate and share your investment portfolio.
+        A private and secure way to consolidate and share your investment portfolio.
       </p>
     </div>
   );
