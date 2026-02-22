@@ -209,8 +209,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/connections/:id/accept", isAuthenticated, async (req, res) => {
     try {
-      const conn = await storage.updateConnectionStatus(req.params.id, "accepted");
-      res.json(conn);
+      const conn = await storage.getConnectionById(req.params.id);
+      if (!conn || conn.receiverId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      const updated = await storage.updateConnectionStatus(req.params.id, "accepted");
+      res.json(updated);
     } catch {
       res.status(500).json({ message: "Server error" });
     }
@@ -218,8 +222,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/connections/:id/reject", isAuthenticated, async (req, res) => {
     try {
-      const conn = await storage.updateConnectionStatus(req.params.id, "rejected");
-      res.json(conn);
+      const conn = await storage.getConnectionById(req.params.id);
+      if (!conn || conn.receiverId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      const updated = await storage.updateConnectionStatus(req.params.id, "rejected");
+      res.json(updated);
     } catch {
       res.status(500).json({ message: "Server error" });
     }

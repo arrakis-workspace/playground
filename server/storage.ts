@@ -24,6 +24,7 @@ export interface IStorage {
 
   createConnection(requesterId: string, receiverId: string): Promise<Connection>;
   getConnection(userId1: string, userId2: string): Promise<Connection | undefined>;
+  getConnectionById(id: string): Promise<Connection | undefined>;
   getPendingConnectionRequests(userId: string): Promise<(Connection & { requester: User })[]>;
   getConnections(userId: string): Promise<User[]>;
   updateConnectionStatus(id: string, status: string): Promise<Connection>;
@@ -142,6 +143,11 @@ class DatabaseStorage implements IStorage {
         and(eq(connections.requesterId, userId2), eq(connections.receiverId, userId1))
       )
     );
+    return conn;
+  }
+
+  async getConnectionById(id: string): Promise<Connection | undefined> {
+    const [conn] = await db.select().from(connections).where(eq(connections.id, id));
     return conn;
   }
 

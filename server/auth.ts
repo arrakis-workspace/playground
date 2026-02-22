@@ -51,6 +51,13 @@ export async function setupAuth(app: Express) {
     })
   );
 
+  app.use("/api", (_req, res, next) => {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
+    next();
+  });
+
   const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
@@ -72,13 +79,11 @@ export async function setupAuth(app: Express) {
     });
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-    console.log("Redirecting to Google with redirect_uri:", redirectUri);
-    console.log("Full auth URL:", authUrl);
     res.redirect(authUrl);
   });
 
   app.get("/api/auth/google/callback", async (req, res) => {
-    console.log("Callback hit, query:", JSON.stringify(req.query));
+    
 
     if (req.query.error) {
       console.error("Google error:", req.query.error, req.query.error_description);
@@ -130,8 +135,6 @@ export async function setupAuth(app: Express) {
         return res.redirect("/");
       }
 
-      console.log("Google profile received:", profile.email);
-
       const user = await storage.upsertUser({
         id: profile.id,
         email: profile.email ?? null,
@@ -160,6 +163,7 @@ export async function setupAuth(app: Express) {
   app.get("/api/logout", (req, res) => {
     req.session.destroy((err) => {
       if (err) console.error("Session destroy error:", err);
+      res.clearCookie("connect.sid", { path: "/", httpOnly: true, secure: true, sameSite: "lax" });
       res.redirect("/");
     });
   });
