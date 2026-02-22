@@ -100,8 +100,8 @@ export function Social() {
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-colors ${
-                tab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              className={`px-4 py-2 rounded-xl text-sm font-medium capitalize transition-all ${
+                tab === t ? "bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground border border-border hover:border-primary/30 hover:text-primary hover:bg-primary/5"
               }`}
               data-testid={`tab-${t}`}
             >
@@ -133,7 +133,7 @@ export function Social() {
             </div>
           )}
           {tab === "connections" && connections.map((c: any) => (
-            <div key={c.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between" data-testid={`connection-${c.id}`}>
+            <div key={c.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between hover:border-primary/30 hover:shadow-sm transition-all" data-testid={`connection-${c.id}`}>
               <div className="flex items-center gap-3">
                 <UserAvatar u={c} />
                 <div>
@@ -153,7 +153,7 @@ export function Social() {
             </div>
           )}
           {tab === "requests" && pendingRequests.map((p: any) => (
-            <div key={p.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between" data-testid={`request-${p.id}`}>
+            <div key={p.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between hover:border-primary/30 hover:shadow-sm transition-all" data-testid={`request-${p.id}`}>
               <div className="flex items-center gap-3">
                 <UserAvatar u={p.requester} />
                 <div>
@@ -173,7 +173,7 @@ export function Social() {
           ))}
 
           {tab === "search" && searchResults.map((u: any) => (
-            <div key={u.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between" data-testid={`search-result-${u.id}`}>
+            <div key={u.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between hover:border-primary/30 hover:shadow-sm transition-all" data-testid={`search-result-${u.id}`}>
               <div className="flex items-center gap-3">
                 <UserAvatar u={u} />
                 <div>

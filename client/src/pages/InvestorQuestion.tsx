@@ -41,7 +41,7 @@ export const InvestorQuestion = (): JSX.Element => {
               variant="outline"
               onClick={handleAnswer}
               data-testid="button-no"
-              className="h-11 w-24 rounded-xl border-border font-medium text-base"
+              className="h-11 w-24 rounded-xl bg-card border-border text-foreground font-medium text-base"
             >
               No
             </Button>

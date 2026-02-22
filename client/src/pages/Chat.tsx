@@ -48,7 +48,7 @@ function ConversationList() {
               <button
                 key={c.id}
                 onClick={() => setLocation(`/chat/${c.id}`)}
-                className="flex flex-col items-center gap-1.5 min-w-[64px]"
+                className="flex flex-col items-center gap-1.5 min-w-[64px] hover:opacity-80 transition-opacity"
                 data-testid={`quick-chat-${c.id}`}
               >
                 <UserAvatar u={c} size="lg" />
@@ -65,7 +65,7 @@ function ConversationList() {
             <button
               key={c.user.id}
               onClick={() => setLocation(`/chat/${c.user.id}`)}
-              className="bg-card rounded-xl border border-border p-4 flex items-center gap-3 w-full text-left hover:bg-muted/50 transition-colors"
+              className="bg-card rounded-xl border border-border p-4 flex items-center gap-3 w-full text-left hover:border-primary/30 hover:shadow-sm transition-all"
               data-testid={`conversation-${c.user.id}`}
             >
               <UserAvatar u={c.user} />

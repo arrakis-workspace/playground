@@ -81,7 +81,7 @@ export function LinkInstitution() {
         <Button
           variant="ghost"
           onClick={() => setLocation("/")}
-          className="mt-3 text-muted-foreground text-sm"
+          className="mt-3 text-muted-foreground hover:text-primary text-sm"
           data-testid="button-skip-link"
         >
           Skip for now

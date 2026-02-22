@@ -107,7 +107,7 @@ export function HandleSelection() {
         <Button
           variant="ghost"
           onClick={() => setLocation("/link-institution")}
-          className="mt-3 text-muted-foreground text-sm"
+          className="mt-3 text-muted-foreground hover:text-primary text-sm"
           data-testid="button-skip-handle"
         >
           Skip for now

@@ -99,8 +99,8 @@ export function Dashboard({ user }: DashboardProps) {
             <button
               key={r.label}
               onClick={() => setTimeRange(r.label)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                timeRange === r.label ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                timeRange === r.label ? "bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground border border-border hover:border-primary/30 hover:text-primary hover:bg-primary/5"
               }`}
               data-testid={`button-range-${r.label}`}
             >
@@ -117,7 +117,7 @@ export function Dashboard({ user }: DashboardProps) {
             {holdingsData.map((h: any) => {
               const value = parseFloat(h.totalValue);
               return (
-                <div key={h.id} className="flex items-center justify-between py-3 border-b border-border last:border-0" data-testid={`holding-${h.symbol}`}>
+                <div key={h.id} className="flex items-center justify-between py-3 border-b border-border last:border-0 hover:bg-primary/5 -mx-2 px-2 rounded-lg transition-colors" data-testid={`holding-${h.symbol}`}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                       <span className="text-primary text-xs font-bold">{h.symbol?.slice(0, 3)}</span>
