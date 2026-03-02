@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
-import { pgTable, timestamp, varchar, numeric, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, timestamp, varchar, numeric, jsonb, text } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
 import { users } from "./auth";
 
 export const linkedAccounts = pgTable("linked_accounts", {
@@ -35,8 +37,39 @@ export const portfolioHistory = pgTable("portfolio_history", {
   totalValue: numeric("total_value").notNull(),
 });
 
+export const marketIndexes = pgTable("market_indexes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  symbol: varchar("symbol").notNull(),
+  date: timestamp("date").notNull(),
+  closePrice: numeric("close_price").notNull(),
+  openPrice: numeric("open_price"),
+  highPrice: numeric("high_price"),
+  lowPrice: numeric("low_price"),
+  volume: numeric("volume"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const watchlists = pgTable("watchlists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  symbols: text("symbols").array().notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWatchlistSchema = createInsertSchema(watchlists).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type LinkedAccount = typeof linkedAccounts.$inferSelect;
 export type InsertLinkedAccount = typeof linkedAccounts.$inferInsert;
 export type Holding = typeof holdings.$inferSelect;
 export type InsertHolding = typeof holdings.$inferInsert;
 export type PortfolioHistoryEntry = typeof portfolioHistory.$inferSelect;
+export type MarketIndex = typeof marketIndexes.$inferSelect;
+export type InsertMarketIndex = typeof marketIndexes.$inferInsert;
+export type Watchlist = typeof watchlists.$inferSelect;
+export type InsertWatchlist = z.infer<typeof insertWatchlistSchema>;

@@ -8,8 +8,8 @@ export function TermsOfService() {
       <header className="bg-card border-b border-border px-4 py-3 sm:px-6">
         <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-2 justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <img src="/figmaAssets/frame.svg" alt="Playground logo" className="w-8 h-8" data-testid="img-logo" />
-            <span className="font-semibold text-foreground text-lg tracking-tight">Playground</span>
+            <img src="/figmaAssets/frame.svg" alt="Butterfli logo" className="w-8 h-8" data-testid="img-logo" />
+            <span className="font-semibold text-foreground text-lg tracking-tight">Butterfli</span>
           </Link>
           <UserAccountButton />
         </div>
@@ -22,17 +22,17 @@ export function TermsOfService() {
         <div className="bg-card rounded-2xl shadow-sm border border-border p-6 md:p-8 space-y-6 text-muted-foreground leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">1. Acceptance of Terms</h2>
-            <p>By accessing and using Playground, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the application.</p>
+            <p>By accessing and using Butterfli, you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the application.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">2. Description of Service</h2>
-            <p>Playground is an investment onboarding platform that provides users with tools and resources for managing their investment profile and preferences.</p>
+            <p>Butterfli is an investment onboarding platform that provides users with tools and resources for managing their investment profile and preferences.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">3. User Accounts</h2>
-            <p>To use Playground, you must:</p>
+            <p>To use Butterfli, you must:</p>
             <ul className="list-disc pl-6 mt-2 space-y-1">
               <li>Sign in using a valid Google account</li>
               <li>Provide accurate and complete information during profile setup</li>
@@ -54,27 +54,27 @@ export function TermsOfService() {
 
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">5. Intellectual Property</h2>
-            <p>All content, features, and functionality of Playground are owned by us and are protected by international copyright, trademark, and other intellectual property laws.</p>
+            <p>All content, features, and functionality of Butterfli are owned by us and are protected by international copyright, trademark, and other intellectual property laws.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">6. Disclaimer of Warranties</h2>
-            <p>Playground is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not guarantee that the service will be uninterrupted, secure, or error-free.</p>
+            <p>Butterfli is provided "as is" and "as available" without warranties of any kind, either express or implied. We do not guarantee that the service will be uninterrupted, secure, or error-free.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">7. Limitation of Liability</h2>
-            <p>To the fullest extent permitted by law, Playground shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or relating to your use of the service.</p>
+            <p>To the fullest extent permitted by law, Butterfli shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or relating to your use of the service.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">8. Investment Disclaimer</h2>
-            <p>Playground does not provide investment advice. Any information provided through the platform is for informational purposes only and should not be construed as financial, investment, or legal advice. Always consult with qualified professionals before making investment decisions.</p>
+            <p>Butterfli does not provide investment advice. Any information provided through the platform is for informational purposes only and should not be construed as financial, investment, or legal advice. Always consult with qualified professionals before making investment decisions.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">9. Termination</h2>
-            <p>We reserve the right to suspend or terminate your access to Playground at any time, without notice, for any reason, including if we believe you have violated these Terms of Service.</p>
+            <p>We reserve the right to suspend or terminate your access to Butterfli at any time, without notice, for any reason, including if we believe you have violated these Terms of Service.</p>
           </section>
 
           <section>

@@ -26,7 +26,7 @@ export async function sendConnectionRequestEmail(
   try {
     const handleText = requesterHandle ? ` (@${requesterHandle})` : "";
     await client.emails.send({
-      from: "Playground <onboarding@resend.dev>",
+      from: "Butterfli <onboarding@resend.dev>",
       to: recipientEmail,
       subject: `${requesterName}${handleText} sent you a connection request`,
       html: `
@@ -39,11 +39,11 @@ export async function sendConnectionRequestEmail(
               <strong>${requesterName}</strong>${handleText}
             </p>
             <p style="color: #666; font-size: 14px; margin: 0;">
-              wants to connect with you on Playground
+              wants to connect with you on Butterfli
             </p>
           </div>
           <p style="color: #888; font-size: 12px; text-align: center; margin: 0;">
-            Log in to Playground to accept or decline this request.
+            Log in to Butterfli to accept or decline this request.
           </p>
         </div>
       `,

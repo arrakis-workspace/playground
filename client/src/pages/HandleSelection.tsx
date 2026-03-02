@@ -104,14 +104,6 @@ export function HandleSelection() {
           </Button>
         </div>
 
-        <Button
-          variant="ghost"
-          onClick={() => setLocation("/link-institution")}
-          className="mt-3 text-muted-foreground hover:text-primary text-sm"
-          data-testid="button-skip-handle"
-        >
-          Skip for now
-        </Button>
       </div>
     </PageLayout>
   );

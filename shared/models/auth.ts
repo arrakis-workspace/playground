@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   emailNotifications: boolean("email_notifications").default(true).notNull(),
   textNotifications: boolean("text_notifications").default(false).notNull(),
   lastSeenRequestsAt: timestamp("last_seen_requests_at"),
+  deleted: boolean("deleted").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

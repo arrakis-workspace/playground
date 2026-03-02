@@ -11,13 +11,13 @@ export const Login = (): JSX.Element => {
       <div className="flex flex-col items-center gap-8 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg py-8 lg:py-16">
         <img
           className="w-[80px] h-[80px] md:w-[100px] md:h-[100px]"
-          alt="Playground logo"
+          alt="Butterfli logo"
           src="/figmaAssets/frame.svg"
           data-testid="img-logo"
         />
 
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight" data-testid="text-welcome">Welcome to Playground</h1>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight" data-testid="text-welcome">Welcome to Butterfli</h1>
           <p className="text-muted-foreground text-sm mt-2">Sign in to manage your investments</p>
         </div>
 

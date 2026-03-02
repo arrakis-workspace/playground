@@ -48,6 +48,7 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: true,
       staleTime: 1000 * 60 * 2,
+      gcTime: 1000 * 60 * 10,
       retry: false,
     },
     mutations: {

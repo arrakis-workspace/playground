@@ -135,13 +135,24 @@ export async function setupAuth(app: Express) {
         return res.redirect("/");
       }
 
-      const user = await storage.upsertUser({
-        id: profile.id,
-        email: profile.email ?? null,
-        firstName: profile.given_name ?? null,
-        lastName: profile.family_name ?? null,
-        profileImageUrl: profile.picture ?? null,
-      });
+      const existingUser = await storage.getUser(profile.id);
+      let user;
+      if (existingUser && existingUser.deleted) {
+        user = await storage.reactivateUser(profile.id, {
+          email: profile.email ?? null,
+          firstName: profile.given_name ?? null,
+          lastName: profile.family_name ?? null,
+          profileImageUrl: profile.picture ?? null,
+        });
+      } else {
+        user = await storage.upsertUser({
+          id: profile.id,
+          email: profile.email ?? null,
+          firstName: profile.given_name ?? null,
+          lastName: profile.family_name ?? null,
+          profileImageUrl: profile.picture ?? null,
+        });
+      }
 
       req.session.userId = user.id;
       let redirectTo = "/profile-setup";
@@ -166,6 +177,24 @@ export async function setupAuth(app: Express) {
       res.clearCookie("connect.sid", { path: "/", httpOnly: true, secure: true, sameSite: "lax" });
       res.redirect("/");
     });
+  });
+
+  app.delete("/api/account", async (req, res) => {
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      await storage.deleteUser(userId);
+      req.session.destroy((err) => {
+        if (err) console.error("Session destroy error:", err);
+        res.clearCookie("connect.sid", { path: "/", httpOnly: true, secure: true, sameSite: "lax" });
+        res.json({ message: "Account deleted" });
+      });
+    } catch (err: any) {
+      console.error("Account deletion error:", err.message);
+      res.status(500).json({ message: "Failed to delete account" });
+    }
   });
 
   app.get("/api/auth/user", async (req, res) => {

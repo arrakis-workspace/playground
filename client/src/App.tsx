@@ -19,6 +19,7 @@ import { ChatPage } from "@/pages/Chat";
 import { PrivacyPolicy } from "@/pages/PrivacyPolicy";
 import { TermsOfService } from "@/pages/TermsOfService";
 import { Company } from "@/pages/Company";
+import EquityDetail from "@/pages/EquityDetail";
 
 function Router() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/company" component={Company} />
+      <Route path="/equity/:symbol" component={EquityDetail} />
 
       <Route path="/login">
         {isAuthenticated ? <Redirect to="/" /> : <Login />}

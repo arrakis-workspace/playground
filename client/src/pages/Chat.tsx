@@ -5,8 +5,19 @@ import { Button } from "@/components/ui/button";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function UserAvatar({ u, size = "md" }: { u: any; size?: "md" | "lg" }) {
   const s = size === "lg" ? "w-12 h-12" : "w-10 h-10";
@@ -21,6 +32,8 @@ function UserAvatar({ u, size = "md" }: { u: any; size?: "md" | "lg" }) {
 
 function ConversationList() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { data: conversations = [] } = useQuery<any[]>({
     queryKey: ["/api/conversations"],
@@ -28,6 +41,21 @@ function ConversationList() {
 
   const { data: connections = [] } = useQuery<any[]>({
     queryKey: ["/api/connections"],
+  });
+
+  const deleteConversation = useMutation({
+    mutationFn: async (otherUserId: string) => {
+      await apiRequest("DELETE", `/api/conversations/${otherUserId}`);
+    },
+    onSuccess: (_, otherUserId) => {
+      toast({ title: "Conversation deleted" });
+      setDeleteTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/messages", otherUserId] });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete conversation", variant: "destructive" });
+    },
   });
 
   return (
@@ -40,11 +68,11 @@ function ConversationList() {
         </div>
       )}
 
-      {connections.length > 0 && (
+      {connections.filter((c: any) => !c.deleted).length > 0 && (
         <div className="mb-6">
           <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">Connections</h3>
           <div className="flex gap-4 overflow-x-auto pb-2">
-            {connections.map((c: any) => (
+            {connections.filter((c: any) => !c.deleted).map((c: any) => (
               <button
                 key={c.id}
                 onClick={() => setLocation(`/chat/${c.id}`)}
@@ -62,24 +90,58 @@ function ConversationList() {
       {conversations.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {conversations.map((c: any) => (
-            <button
+            <div
               key={c.user.id}
-              onClick={() => setLocation(`/chat/${c.user.id}`)}
-              className="bg-card rounded-xl border border-border p-4 flex items-center gap-3 w-full text-left hover:border-primary/30 hover:shadow-sm transition-all"
+              className="bg-card rounded-xl border border-border p-4 flex items-center gap-3 w-full hover:border-primary/30 hover:shadow-sm transition-all"
               data-testid={`conversation-${c.user.id}`}
             >
-              <UserAvatar u={c.user} />
-              <div className="flex-1 min-w-0">
-                <p className="text-foreground font-medium text-sm">{c.user.firstName} {c.user.lastName}</p>
-                <p className="text-muted-foreground text-xs truncate">{c.lastMessage.content}</p>
-              </div>
-              <span className="text-muted-foreground/60 text-xs shrink-0">
-                {new Date(c.lastMessage.createdAt).toLocaleDateString()}
-              </span>
-            </button>
+              <button
+                onClick={() => setLocation(`/chat/${c.user.id}`)}
+                className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                data-testid={`button-open-chat-${c.user.id}`}
+              >
+                <UserAvatar u={c.user} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-foreground font-medium text-sm">{c.user.firstName} {c.user.lastName}</p>
+                  <p className="text-muted-foreground text-xs truncate">{c.lastMessage.content}</p>
+                </div>
+                <span className="text-muted-foreground/60 text-xs shrink-0">
+                  {new Date(c.lastMessage.createdAt).toLocaleDateString()}
+                </span>
+              </button>
+              <button
+                onClick={() => setDeleteTarget({ id: c.user.id, name: `${c.user.firstName} ${c.user.lastName}` })}
+                className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                data-testid={`button-delete-conversation-${c.user.id}`}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="max-w-sm rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all messages with {deleteTarget?.name}. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteConversation.isPending} data-testid="button-cancel-delete-chat">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && deleteConversation.mutate(deleteTarget.id)}
+              disabled={deleteConversation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-chat"
+            >
+              {deleteConversation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

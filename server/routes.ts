@@ -2,8 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth, isAuthenticated } from "./auth";
 import { storage } from "./storage";
-import { updateProfileSchema, updateHandleSchema, sendMessageSchema, updateNotificationSettingsSchema } from "@shared/schema";
+import { updateProfileSchema, updateHandleSchema, sendMessageSchema, updateNotificationSettingsSchema, insertWatchlistSchema } from "@shared/schema";
 import { sendConnectionRequestEmail } from "./email";
+import { getIndexHistory, getQuotes, getTopEquities, searchEquities, getEquityDetail, getEquityChart, INDEX_SYMBOLS } from "./market-data";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -247,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/connections", isAuthenticated, async (req, res) => {
     try {
       const conns = await storage.getConnections(req.session.userId!);
-      res.json(conns.map(u => ({ id: u.id, handle: u.handle, firstName: u.firstName, lastName: u.lastName, profileImageUrl: u.profileImageUrl })));
+      res.json(conns.map(u => ({ id: u.id, handle: u.handle, firstName: u.firstName, lastName: u.lastName, profileImageUrl: u.profileImageUrl, deleted: u.deleted })));
     } catch {
       res.status(500).json({ message: "Server error" });
     }
@@ -291,6 +292,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/connections/:userId", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteConnection(req.session.userId!, req.params.userId);
+      await storage.deleteConversation(req.session.userId!, req.params.userId);
+      res.json({ message: "Connection removed" });
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.delete("/api/conversations/:userId", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteConversation(req.session.userId!, req.params.userId);
+      res.json({ message: "Conversation deleted" });
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.post("/api/messages", isAuthenticated, async (req, res) => {
     const userId = req.session.userId!;
     const result = sendMessageSchema.safeParse(req.body);
@@ -319,6 +339,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: { id: c.user.id, handle: c.user.handle, firstName: c.user.firstName, lastName: c.user.lastName, profileImageUrl: c.user.profileImageUrl },
         lastMessage: c.lastMessage,
       })));
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/market/indexes", async (req, res) => {
+    try {
+      const symbolsParam = (req.query.symbols as string) || "^GSPC,^DJI,^IXIC";
+      const range = (req.query.range as string) || "1D";
+      const symbols = symbolsParam.split(",").map(s => s.trim());
+      const results: Record<string, any> = {};
+      await Promise.all(symbols.map(async (sym) => {
+        const historyResult = await getIndexHistory(sym, range);
+        results[sym] = historyResult;
+      }));
+      res.set("Cache-Control", "public, max-age=60");
+      res.json(results);
+    } catch (err: any) {
+      console.error("Market indexes error:", err.message);
+      res.status(500).json({ message: "Failed to fetch index data" });
+    }
+  });
+
+  app.get("/api/market/quotes", async (req, res) => {
+    try {
+      const symbolsParam = req.query.symbols as string;
+      if (!symbolsParam) return res.json([]);
+      const symbols = symbolsParam.split(",").map(s => s.trim());
+      const quotes = await getQuotes(symbols);
+      res.set("Cache-Control", "public, max-age=30");
+      res.json(quotes);
+    } catch (err: any) {
+      console.error("Market quotes error:", err.message);
+      res.status(500).json({ message: "Failed to fetch quotes" });
+    }
+  });
+
+  app.get("/api/market/top-equities", async (req, res) => {
+    try {
+      const index = (req.query.index as string) || "sp500";
+      const sort = (req.query.sort as string) || "marketCap";
+      const limit = parseInt(req.query.limit as string) || 10;
+      const equities = await getTopEquities(index, sort, limit);
+      res.set("Cache-Control", "public, max-age=60");
+      res.json(equities);
+    } catch (err: any) {
+      console.error("Top equities error:", err.message);
+      res.status(500).json({ message: "Failed to fetch top equities" });
+    }
+  });
+
+  app.get("/api/market/equity/:symbol", async (req, res) => {
+    try {
+      const { symbol } = req.params;
+      const detail = await getEquityDetail(symbol.toUpperCase());
+      if (!detail) return res.status(404).json({ message: "Equity not found" });
+      res.set("Cache-Control", "public, max-age=120");
+      res.json(detail);
+    } catch (err: any) {
+      console.error("Equity detail error:", err.message);
+      res.status(500).json({ message: "Failed to fetch equity detail" });
+    }
+  });
+
+  app.get("/api/market/equity/:symbol/chart", async (req, res) => {
+    try {
+      const { symbol } = req.params;
+      const range = (req.query.range as string) || "1D";
+      const points = await getEquityChart(symbol.toUpperCase(), range);
+      res.set("Cache-Control", "public, max-age=120");
+      res.json(points);
+    } catch (err: any) {
+      console.error("Equity chart error:", err.message);
+      res.status(500).json({ message: "Failed to fetch equity chart" });
+    }
+  });
+
+  app.get("/api/market/search", async (req, res) => {
+    try {
+      const q = req.query.q as string;
+      if (!q) return res.json([]);
+      const results = await searchEquities(q);
+      res.set("Cache-Control", "public, max-age=300");
+      res.json(results);
+    } catch (err: any) {
+      console.error("Market search error:", err.message);
+      res.status(500).json({ message: "Failed to search equities" });
+    }
+  });
+
+  app.get("/api/watchlists", isAuthenticated, async (req, res) => {
+    try {
+      const wls = await storage.getUserWatchlists(req.session.userId!);
+      res.json(wls);
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/watchlists", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const { name, symbols } = req.body;
+    if (!name || typeof name !== "string" || name.trim().length === 0) {
+      return res.status(400).json({ message: "Watchlist name is required" });
+    }
+    try {
+      const wl = await storage.createWatchlist({ userId, name: name.trim(), symbols: Array.isArray(symbols) ? symbols : [] });
+      res.json(wl);
+    } catch (err: any) {
+      console.error("Create watchlist error:", err.message);
+      res.status(500).json({ message: "Failed to create watchlist" });
+    }
+  });
+
+  app.put("/api/watchlists/:id", isAuthenticated, async (req, res) => {
+    const { name, symbols } = req.body;
+    if (!name || typeof name !== "string") {
+      return res.status(400).json({ message: "Watchlist name is required" });
+    }
+    if (!Array.isArray(symbols)) {
+      return res.status(400).json({ message: "Symbols must be an array" });
+    }
+    try {
+      const wl = await storage.updateWatchlist(req.params.id, req.session.userId!, name.trim(), symbols);
+      if (!wl) {
+        return res.status(404).json({ message: "Watchlist not found" });
+      }
+      res.json(wl);
+    } catch (err: any) {
+      console.error("Update watchlist error:", err.message);
+      res.status(500).json({ message: "Failed to update watchlist" });
+    }
+  });
+
+  app.delete("/api/watchlists/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteWatchlist(req.params.id, req.session.userId!);
+      res.json({ success: true });
     } catch {
       res.status(500).json({ message: "Server error" });
     }

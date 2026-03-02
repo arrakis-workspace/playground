@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -19,12 +19,23 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Mail, MessageSquare, Bell } from "lucide-react";
+import { Mail, MessageSquare, Bell, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const ProfileSetup = (): JSX.Element => {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const form = useForm<UpdateProfile>({
     resolver: zodResolver(updateProfileSchema),
@@ -56,7 +67,7 @@ export const ProfileSetup = (): JSX.Element => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Profile saved successfully" });
       if (!user?.profileCompleted) {
-        setLocation("/link-institution");
+        setLocation("/handle-selection");
       }
     },
     onError: () => {
@@ -90,6 +101,19 @@ export const ProfileSetup = (): JSX.Element => {
       [key]: value,
     });
   };
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/account");
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = "/";
+    },
+    onError: () => {
+      toast({ title: "Failed to delete account", variant: "destructive" });
+    },
+  });
 
   const onSubmit = (data: UpdateProfile) => {
     saveProfileMutation.mutate(data);
@@ -266,7 +290,55 @@ export const ProfileSetup = (): JSX.Element => {
             </div>
           </div>
         )}
+
+        {user?.profileCompleted && (
+          <div className="bg-card rounded-2xl shadow-sm border border-destructive/30 p-6 w-full mt-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Trash2 className="w-4 h-4 text-destructive" />
+              <h3 className="text-destructive font-semibold text-sm">Delete Account</h3>
+            </div>
+            <p className="text-muted-foreground text-xs mb-4">
+              Permanently delete your account and all associated data including portfolio, watchlists, and messages. Your connections will see your handle marked as deleted.
+            </p>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              className="rounded-xl text-sm"
+              data-testid="button-delete-account"
+            >
+              Delete My Account
+            </Button>
+          </div>
+        )}
       </div>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="max-w-sm rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. All your data will be permanently deleted. Your connections will still see your handle marked as deleted. If you sign up again, it will be a completely fresh account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleteAccountMutation.isPending}
+              data-testid="button-cancel-delete"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteAccountMutation.mutate()}
+              disabled={deleteAccountMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteAccountMutation.isPending ? "Deleting..." : "Delete Account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 };

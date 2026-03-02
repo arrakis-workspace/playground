@@ -10,8 +10,8 @@ export function Company() {
       <header className="bg-card border-b border-border px-4 py-3 sm:px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5" data-testid="link-back-home">
-            <img src="/figmaAssets/frame.svg" alt="Playground logo" className="w-8 h-8" data-testid="img-logo" />
-            <span className="font-semibold text-foreground text-lg tracking-tight">Playground</span>
+            <img src="/figmaAssets/frame.svg" alt="Butterfli logo" className="w-8 h-8" data-testid="img-logo" />
+            <span className="font-semibold text-foreground text-lg tracking-tight">Butterfli</span>
           </Link>
           <UserAccountButton />
         </div>
@@ -44,7 +44,7 @@ export function Company() {
                   </div>
                   <div>
                     <p className="font-medium text-foreground" data-testid="link-terms-of-service">Terms of Service</p>
-                    <p className="text-sm text-muted-foreground">Rules and guidelines for using Playground</p>
+                    <p className="text-sm text-muted-foreground">Rules and guidelines for using Butterfli</p>
                   </div>
                 </CardContent>
               </Card>

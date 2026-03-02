@@ -6,8 +6,18 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { Search, UserPlus, Check, X, MessageCircle } from "lucide-react";
+import { Search, UserPlus, Check, X, MessageCircle, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function Social() {
   const [, setLocation] = useLocation();
@@ -15,6 +25,7 @@ export function Social() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [tab, setTab] = useState<"connections" | "requests" | "search">("connections");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     apiRequest("POST", "/api/connections/mark-seen")
@@ -73,6 +84,21 @@ export function Social() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/connections/pending"] });
+    },
+  });
+
+  const deleteConnection = useMutation({
+    mutationFn: async (otherUserId: string) => {
+      await apiRequest("DELETE", `/api/connections/${otherUserId}`);
+    },
+    onSuccess: () => {
+      toast({ title: "Connection removed" });
+      setDeleteTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/connections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to remove connection", variant: "destructive" });
     },
   });
 
@@ -141,17 +167,32 @@ export function Social() {
             </div>
           )}
           {tab === "connections" && connections.map((c: any) => (
-            <div key={c.id} className="bg-card rounded-xl border border-border p-4 flex items-center justify-between hover:border-primary/30 hover:shadow-sm transition-all" data-testid={`connection-${c.id}`}>
+            <div key={c.id} className={`bg-card rounded-xl border border-border p-4 flex items-center justify-between transition-all ${c.deleted ? "opacity-60" : "hover:border-primary/30 hover:shadow-sm"}`} data-testid={`connection-${c.id}`}>
               <div className="flex items-center gap-3">
                 <UserAvatar u={c} />
                 <div>
                   <p className="text-foreground font-medium text-sm">{c.firstName} {c.lastName}</p>
-                  {c.handle && <p className="text-muted-foreground text-xs">@{c.handle}</p>}
+                  {c.deleted ? (
+                    <p className="text-muted-foreground text-xs italic">Account deleted</p>
+                  ) : (
+                    c.handle && <p className="text-muted-foreground text-xs">@{c.handle}</p>
+                  )}
                 </div>
               </div>
-              <button onClick={() => setLocation(`/chat/${c.id}`)} className="text-primary hover:text-primary/80 transition-colors" data-testid={`button-chat-${c.id}`}>
-                <MessageCircle className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {!c.deleted && (
+                  <button onClick={() => setLocation(`/chat/${c.id}`)} className="text-primary hover:text-primary/80 transition-colors" data-testid={`button-chat-${c.id}`}>
+                    <MessageCircle className="w-5 h-5" />
+                  </button>
+                )}
+                <button
+                  onClick={() => setDeleteTarget({ id: c.id, name: `${c.firstName} ${c.lastName}` })}
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                  data-testid={`button-delete-connection-${c.id}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -201,6 +242,28 @@ export function Social() {
           ))}
         </div>
       </div>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="max-w-sm rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove connection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove {deleteTarget?.name} from your connections. You can send a new request to reconnect later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteConnection.isPending} data-testid="button-cancel-delete-connection">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && deleteConnection.mutate(deleteTarget.id)}
+              disabled={deleteConnection.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete-connection"
+            >
+              {deleteConnection.isPending ? "Removing..." : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 }

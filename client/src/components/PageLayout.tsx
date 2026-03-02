@@ -38,8 +38,8 @@ export function PageLayout({ children, showBottomNav = true, className = "" }: P
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2.5">
-              <img className="w-8 h-8" alt="Playground logo" src="/figmaAssets/frame.svg" data-testid="img-header-logo" />
-              <span className="font-semibold text-foreground text-lg tracking-tight">Playground</span>
+              <img className="w-8 h-8" alt="Butterfli logo" src="/figmaAssets/frame.svg" data-testid="img-header-logo" />
+              <span className="font-semibold text-foreground text-lg tracking-tight">Butterfli</span>
             </Link>
 
             {hasCompletedSetup && (
@@ -86,8 +86,8 @@ export function PageLayout({ children, showBottomNav = true, className = "" }: P
               const isActive = item.path === "/" ? location === "/" : location.startsWith(item.path);
               const showBadge = item.path === "/social" && unseenCount > 0;
               return (
-                <Link key={item.path} href={item.path} className="relative flex flex-col items-center gap-0.5 py-1 px-3" data-testid={`nav-${item.label.toLowerCase()}`}>
-                  <item.icon className={`w-5 h-5 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                <Link key={item.path} href={item.path} className={`relative flex flex-col items-center gap-0.5 py-1.5 px-3 rounded-lg transition-colors ${isActive ? "bg-primary/10" : "hover:bg-muted"}`} data-testid={`nav-${item.label.toLowerCase()}`}>
+                  <item.icon className={`w-5 h-5 transition-colors ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />
                   <span className={`text-[10px] font-medium transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>{item.label}</span>
                   {showBadge && (
                     <span className="absolute -top-0.5 right-0 bg-destructive text-destructive-foreground text-[9px] font-bold min-w-[16px] h-[16px] rounded-full flex items-center justify-center px-0.5" data-testid="badge-unseen-mobile">

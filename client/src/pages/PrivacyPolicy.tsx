@@ -8,8 +8,8 @@ export function PrivacyPolicy() {
       <header className="bg-card border-b border-border px-4 py-3 sm:px-6">
         <div className="max-w-5xl mx-auto flex flex-wrap items-center gap-2 justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <img src="/figmaAssets/frame.svg" alt="Playground logo" className="w-8 h-8" data-testid="img-logo" />
-            <span className="font-semibold text-foreground text-lg tracking-tight">Playground</span>
+            <img src="/figmaAssets/frame.svg" alt="Butterfli logo" className="w-8 h-8" data-testid="img-logo" />
+            <span className="font-semibold text-foreground text-lg tracking-tight">Butterfli</span>
           </Link>
           <UserAccountButton />
         </div>
@@ -22,7 +22,7 @@ export function PrivacyPolicy() {
         <div className="bg-card rounded-2xl shadow-sm border border-border p-6 md:p-8 space-y-6 text-muted-foreground leading-relaxed">
           <section>
             <h2 className="text-lg font-semibold text-foreground mb-2">1. Information We Collect</h2>
-            <p>When you use Playground, we collect information that you provide directly to us, including:</p>
+            <p>When you use Butterfli, we collect information that you provide directly to us, including:</p>
             <ul className="list-disc pl-6 mt-2 space-y-1">
               <li>Your name, email address, and profile picture from your Google account when you sign in</li>
               <li>Contact information you provide during profile setup (phone number, country)</li>

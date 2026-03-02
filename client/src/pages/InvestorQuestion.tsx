@@ -16,7 +16,7 @@ export const InvestorQuestion = (): JSX.Element => {
           <div className="flex items-center gap-3 mb-6">
             <img
               className="w-9 h-9"
-              alt="Playground logo"
+              alt="Butterfli logo"
               src="/figmaAssets/frame.svg"
               data-testid="img-logo"
             />

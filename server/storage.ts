@@ -1,10 +1,11 @@
-import { type User, type UpsertUser, type UpdateNotificationSettings, type LinkedAccount, type InsertLinkedAccount, type Holding, type InsertHolding, type PortfolioHistoryEntry, type Connection, type InsertConnection, type Message, type InsertMessage } from "@shared/schema";
+import { type User, type UpsertUser, type UpdateNotificationSettings, type LinkedAccount, type InsertLinkedAccount, type Holding, type InsertHolding, type PortfolioHistoryEntry, type Connection, type InsertConnection, type Message, type InsertMessage, type Watchlist, type InsertWatchlist } from "@shared/schema";
 import { db } from "./db";
-import { users, linkedAccounts, holdings, portfolioHistory, connections, messages } from "@shared/schema";
+import { users, linkedAccounts, holdings, portfolioHistory, connections, messages, watchlists } from "@shared/schema";
 import { eq, or, and, ilike, desc, asc, sql, gt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserProfile(id: string, data: { firstName: string; lastName: string; contactNumber: string; country: string }): Promise<User>;
   updateUserHandle(id: string, handle: string): Promise<User>;
@@ -37,11 +38,29 @@ export interface IStorage {
   getConversations(userId: string): Promise<{ user: User; lastMessage: Message }[]>;
 
   searchUsers(query: string, excludeUserId: string): Promise<User[]>;
+
+  getUserWatchlists(userId: string): Promise<Watchlist[]>;
+  createWatchlist(data: InsertWatchlist): Promise<Watchlist>;
+  updateWatchlist(id: string, userId: string, name: string, symbols: string[]): Promise<Watchlist | undefined>;
+  deleteWatchlist(id: string, userId: string): Promise<void>;
+
+  deleteConnection(userId: string, otherUserId: string): Promise<void>;
+  deleteConversation(userId: string, otherUserId: string): Promise<void>;
+
+  deleteUser(userId: string): Promise<void>;
+  reactivateUser(id: string, data: { email: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null }): Promise<User>;
 }
 
 class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(
+      and(eq(users.email, email), eq(users.deleted, false))
+    );
     return user;
   }
 
@@ -88,7 +107,9 @@ class DatabaseStorage implements IStorage {
   }
 
   async checkHandleAvailable(handle: string): Promise<boolean> {
-    const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.handle, handle));
+    const [existing] = await db.select({ id: users.id }).from(users).where(
+      and(eq(users.handle, handle), eq(users.deleted, false))
+    );
     return !existing;
   }
 
@@ -198,7 +219,11 @@ class DatabaseStorage implements IStorage {
       .select({ connection: connections, requester: users })
       .from(connections)
       .innerJoin(users, eq(connections.requesterId, users.id))
-      .where(and(eq(connections.receiverId, userId), eq(connections.status, "pending")));
+      .where(and(
+        eq(connections.receiverId, userId),
+        eq(connections.status, "pending"),
+        eq(users.deleted, false)
+      ));
     return rows.map(r => ({ ...r.connection, requester: r.requester }));
   }
 
@@ -261,6 +286,7 @@ class DatabaseStorage implements IStorage {
     return db.select().from(users)
       .where(and(
         sql`${users.id} != ${excludeUserId}`,
+        eq(users.deleted, false),
         or(
           ilike(users.handle, `%${query}%`),
           ilike(users.firstName, `%${query}%`),
@@ -268,6 +294,99 @@ class DatabaseStorage implements IStorage {
         )
       ))
       .limit(20);
+  }
+
+  async getUserWatchlists(userId: string): Promise<Watchlist[]> {
+    return db.select().from(watchlists).where(eq(watchlists.userId, userId)).orderBy(asc(watchlists.createdAt));
+  }
+
+  async createWatchlist(data: InsertWatchlist): Promise<Watchlist> {
+    const [wl] = await db.insert(watchlists).values(data).returning();
+    return wl;
+  }
+
+  async updateWatchlist(id: string, userId: string, name: string, symbols: string[]): Promise<Watchlist | undefined> {
+    const [wl] = await db.update(watchlists)
+      .set({ name, symbols, updatedAt: new Date() })
+      .where(and(eq(watchlists.id, id), eq(watchlists.userId, userId)))
+      .returning();
+    return wl;
+  }
+
+  async deleteWatchlist(id: string, userId: string): Promise<void> {
+    await db.delete(watchlists).where(and(eq(watchlists.id, id), eq(watchlists.userId, userId)));
+  }
+
+  async deleteConnection(userId: string, otherUserId: string): Promise<void> {
+    await db.delete(connections).where(
+      and(
+        eq(connections.status, "accepted"),
+        or(
+          and(eq(connections.requesterId, userId), eq(connections.receiverId, otherUserId)),
+          and(eq(connections.requesterId, otherUserId), eq(connections.receiverId, userId))
+        )
+      )
+    );
+  }
+
+  async deleteConversation(userId: string, otherUserId: string): Promise<void> {
+    await db.delete(messages).where(
+      or(
+        and(eq(messages.senderId, userId), eq(messages.receiverId, otherUserId)),
+        and(eq(messages.senderId, otherUserId), eq(messages.receiverId, userId))
+      )
+    );
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) return;
+
+    await db.delete(watchlists).where(eq(watchlists.userId, userId));
+    await db.delete(holdings).where(eq(holdings.userId, userId));
+    await db.delete(linkedAccounts).where(eq(linkedAccounts.userId, userId));
+    await db.delete(portfolioHistory).where(eq(portfolioHistory.userId, userId));
+    await db.delete(messages).where(
+      or(eq(messages.senderId, userId), eq(messages.receiverId, userId))
+    );
+    await db.delete(connections).where(
+      and(
+        eq(connections.status, "pending"),
+        or(eq(connections.requesterId, userId), eq(connections.receiverId, userId))
+      )
+    );
+
+    await db.update(users).set({
+      email: null,
+      firstName: "Deleted",
+      lastName: "User",
+      contactNumber: null,
+      country: null,
+      profileImageUrl: null,
+      snaptradeUserSecret: null,
+      profileCompleted: null,
+      handle: null,
+      deleted: true,
+      updatedAt: new Date(),
+    }).where(eq(users.id, userId));
+  }
+
+  async reactivateUser(id: string, data: { email: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null }): Promise<User> {
+    await db.delete(connections).where(
+      or(eq(connections.requesterId, id), eq(connections.receiverId, id))
+    );
+
+    const [user] = await db.update(users).set({
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      profileImageUrl: data.profileImageUrl,
+      deleted: false,
+      profileCompleted: null,
+      handle: null,
+      updatedAt: new Date(),
+    }).where(eq(users.id, id)).returning();
+    return user;
   }
 }
 
