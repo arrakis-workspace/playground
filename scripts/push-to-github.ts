@@ -161,6 +161,7 @@ async function pushToRepo(octokit: Octokit, repoOwner: string, repoName: string,
   });
 
   let parentSha: string | undefined;
+  let parentTreeSha: string | undefined;
   try {
     const { data: ref } = await octokit.git.getRef({
       owner: repoOwner,
@@ -168,7 +169,18 @@ async function pushToRepo(octokit: Octokit, repoOwner: string, repoName: string,
       ref: 'heads/main',
     });
     parentSha = ref.object.sha;
+    const { data: parentCommit } = await octokit.git.getCommit({
+      owner: repoOwner,
+      repo: repoName,
+      commit_sha: parentSha,
+    });
+    parentTreeSha = parentCommit.tree.sha;
   } catch {}
+
+  if (parentTreeSha && parentTreeSha === tree.sha) {
+    console.log('No changes detected — skipping commit.');
+    return;
+  }
 
   console.log('Creating commit...');
   const commitParams: any = {
@@ -214,11 +226,22 @@ async function main() {
 
   const commitMessage = 'Update: Butterfli fintech app from Replit';
 
-  await pushToRepo(octokit, user.login, 'playground', commitMessage);
+  const targets = new Set<string>();
+  const repos: { owner: string; name: string }[] = [];
 
-  await pushToRepo(octokit, 'arrakis-workspace', 'playground', commitMessage);
+  for (const owner of [user.login, 'arrakis-workspace']) {
+    const key = `${owner}/playground`;
+    if (!targets.has(key)) {
+      targets.add(key);
+      repos.push({ owner, name: 'playground' });
+    }
+  }
 
-  console.log('\nAll repositories updated!');
+  for (const repo of repos) {
+    await pushToRepo(octokit, repo.owner, repo.name, commitMessage);
+  }
+
+  console.log('\nDone!');
 }
 
 main().catch(err => {
