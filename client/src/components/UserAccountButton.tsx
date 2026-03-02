@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, LogOut, LayoutDashboard, UserCircle, Building2 } from "lucide-react";
+import { User, LogOut, LayoutDashboard, UserCircle, Building2, PlusCircle } from "lucide-react";
 import { useLocation } from "wouter";
 
 export function UserAccountButton() {
@@ -62,6 +62,13 @@ export function UserAccountButton() {
             Dashboard
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem
+          onClick={() => setLocation("/add-holdings")}
+          data-testid="menu-item-add-holdings"
+        >
+          <PlusCircle className="w-4 h-4 mr-2" />
+          Add Holdings
+        </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setLocation("/profile-setup")}
           data-testid="menu-item-settings"

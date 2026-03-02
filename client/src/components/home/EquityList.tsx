@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
 
 export function CompanyLogo({ symbol, className = "w-10 h-10 rounded-lg" }: { symbol: string; className?: string }) {
@@ -46,6 +46,7 @@ interface EquityListProps {
   onSortChange?: (sort: string) => void;
   emptyMessage?: string;
   headerAction?: React.ReactNode;
+  onTitleClick?: () => void;
 }
 
 export function EquityList({
@@ -59,6 +60,7 @@ export function EquityList({
   onSortChange,
   emptyMessage = "No items to display",
   headerAction,
+  onTitleClick,
 }: EquityListProps) {
   const [, setLocation] = useLocation();
 
@@ -66,9 +68,24 @@ export function EquityList({
     <div className="bg-card rounded-2xl shadow-sm border border-border p-5 lg:p-8 mb-4" data-testid={`section-${testIdPrefix}`}>
       <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-foreground font-semibold text-lg" data-testid={`text-${testIdPrefix}-title`}>
-            {title}
-          </h3>
+          {title && (
+            onTitleClick ? (
+              <button
+                onClick={onTitleClick}
+                className="flex items-center gap-1 group"
+                data-testid={`text-${testIdPrefix}-title`}
+              >
+                <h3 className="text-foreground font-semibold text-lg group-hover:text-primary transition-colors">
+                  {title}
+                </h3>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </button>
+            ) : (
+              <h3 className="text-foreground font-semibold text-lg" data-testid={`text-${testIdPrefix}-title`}>
+                {title}
+              </h3>
+            )
+          )}
           {headerAction}
         </div>
         {sortOptions && sortOptions.length > 0 && (

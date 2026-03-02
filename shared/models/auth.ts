@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, index, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, jsonb, numeric, pgTable, timestamp, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   emailNotifications: boolean("email_notifications").default(true).notNull(),
   textNotifications: boolean("text_notifications").default(false).notNull(),
   lastSeenRequestsAt: timestamp("last_seen_requests_at"),
+  cashBalance: numeric("cash_balance").default("0"),
   deleted: boolean("deleted").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

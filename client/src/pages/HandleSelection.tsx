@@ -50,7 +50,7 @@ export function HandleSelection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Handle saved!" });
-      setLocation("/link-institution");
+      setLocation("/add-holdings");
     },
     onError: (err: any) => {
       toast({ title: err.message || "Failed to save handle", variant: "destructive" });

@@ -56,7 +56,7 @@ export function SnaptradeCallback() {
             <h2 className="text-foreground font-semibold text-xl" data-testid="text-error">Something went wrong</h2>
             <p className="text-muted-foreground mt-2 text-sm">We couldn't sync your accounts. Please try again.</p>
             <div className="flex gap-3 mt-6">
-              <Button onClick={() => setLocation("/link-institution")} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground" data-testid="button-try-again">
+              <Button onClick={() => setLocation("/add-holdings")} className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground" data-testid="button-try-again">
                 Try Again
               </Button>
               <Button onClick={() => setLocation("/")} variant="outline" className="rounded-xl" data-testid="button-skip">

@@ -1,9 +1,9 @@
 import type { User } from "@shared/schema";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { useState, useMemo } from "react";
-import { Building2, Plus, X } from "lucide-react";
+import { Building2, Plus, X, ArrowLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EquityList, type EquityItem } from "@/components/home/EquityList";
 import { EquitySearch } from "@/components/home/EquitySearch";
@@ -76,10 +76,15 @@ export function Dashboard({ user }: DashboardProps) {
   const [topEquitiesSort, setTopEquitiesSort] = useState("marketCap");
   const [showAddWatchlist, setShowAddWatchlist] = useState(false);
   const [newWatchlistName, setNewWatchlistName] = useState("");
+  const [showFullHoldings, setShowFullHoldings] = useState(false);
   const displayName = user.firstName || "there";
 
   const { data: holdingsData = [] } = useQuery<any[]>({
     queryKey: ["/api/portfolio/holdings"],
+  });
+
+  const { data: cashData } = useQuery<{ cashBalance: string }>({
+    queryKey: ["/api/portfolio/cash"],
   });
 
   const selectedRange = TIME_RANGES.find(r => r.label === timeRange);
@@ -144,7 +149,9 @@ export function Dashboard({ user }: DashboardProps) {
     },
   });
 
-  const totalValue = holdingsData.reduce((sum: number, h: any) => sum + parseFloat(h.totalValue || "0"), 0);
+  const holdingsValue = holdingsData.reduce((sum: number, h: any) => sum + parseFloat(h.totalValue || "0"), 0);
+  const cashBalance = parseFloat(cashData?.cashBalance || "0");
+  const totalValue = holdingsValue + cashBalance;
 
   const portfolioSeries = useMemo(() => {
     const raw = historyData.map((d: any) => ({
@@ -247,6 +254,32 @@ export function Dashboard({ user }: DashboardProps) {
     profit: eq.profit,
   }));
 
+  if (showFullHoldings) {
+    return (
+      <div className="flex flex-col w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl">
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => setShowFullHoldings(false)}
+            className="p-2 rounded-xl hover:bg-muted transition-colors"
+            data-testid="button-back-from-holdings"
+          >
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+          </button>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground" data-testid="text-full-holdings-title">
+            Your Holdings
+          </h1>
+        </div>
+        <EquityList
+          title=""
+          items={holdingsEquityItems}
+          testIdPrefix="full-holdings"
+          emptyMessage="No holdings yet"
+          visibleCount={999}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl">
       <div className="mb-6">
@@ -265,6 +298,11 @@ export function Dashboard({ user }: DashboardProps) {
             ${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </div>
+        {cashBalance > 0 && (
+          <p className="text-muted-foreground text-xs mt-1" data-testid="text-cash-balance-dashboard">
+            Includes ${cashBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} cash
+          </p>
+        )}
 
         <div className="flex gap-1.5 mt-3 flex-wrap items-center">
           {hasPortfolioData && (
@@ -320,6 +358,12 @@ export function Dashboard({ user }: DashboardProps) {
                 <YAxis
                   hide
                   domain={["dataMin - 1", "dataMax + 1"]}
+                />
+                <ReferenceLine
+                  y={0}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.5}
                 />
                 <Tooltip
                   contentStyle={{
@@ -407,20 +451,21 @@ export function Dashboard({ user }: DashboardProps) {
           testIdPrefix="holdings"
           emptyMessage="No holdings yet"
           visibleCount={4}
+          onTitleClick={() => setShowFullHoldings(true)}
         />
       ) : (
         <div className="bg-card rounded-2xl shadow-sm border border-border p-8 lg:p-12 mb-4 text-center">
           <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-8 h-8 text-muted-foreground" />
           </div>
-          <p className="text-foreground font-medium text-lg" data-testid="text-no-holdings">No linked accounts yet</p>
-          <p className="text-muted-foreground text-sm mt-1">Connect a brokerage to see your portfolio</p>
+          <p className="text-foreground font-medium text-lg" data-testid="text-no-holdings">No holdings yet</p>
+          <p className="text-muted-foreground text-sm mt-1">Add your investments to track your portfolio</p>
           <Button
-            onClick={() => setLocation("/link-institution")}
+            onClick={() => setLocation("/add-holdings")}
             className="mt-5 rounded-xl"
-            data-testid="button-link-from-dashboard"
+            data-testid="button-add-holdings-from-dashboard"
           >
-            Link a Brokerage
+            Add Holdings
           </Button>
         </div>
       )}

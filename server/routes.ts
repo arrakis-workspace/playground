@@ -2,7 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth, isAuthenticated } from "./auth";
 import { storage } from "./storage";
-import { updateProfileSchema, updateHandleSchema, sendMessageSchema, updateNotificationSettingsSchema, insertWatchlistSchema } from "@shared/schema";
+import { updateProfileSchema, updateHandleSchema, sendMessageSchema, updateNotificationSettingsSchema, insertWatchlistSchema, insertManualHoldingSchema, sellHoldingSchema } from "@shared/schema";
+import multer from "multer";
+import { parseStatement } from "./statement-parser";
 import { sendConnectionRequestEmail } from "./email";
 import { getIndexHistory, getQuotes, getTopEquities, searchEquities, getEquityDetail, getEquityChart, INDEX_SYMBOLS } from "./market-data";
 
@@ -136,8 +138,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/portfolio/holdings", isAuthenticated, async (req, res) => {
     try {
-      const holdings = await storage.getHoldings(req.session.userId!);
-      res.json(holdings);
+      const [brokerageHoldings, manualHoldingsList] = await Promise.all([
+        storage.getHoldings(req.session.userId!),
+        storage.getManualHoldings(req.session.userId!),
+      ]);
+      const manualSymbols = [...new Set(manualHoldingsList.map(h => h.symbol))];
+      let quotes: Record<string, number> = {};
+      if (manualSymbols.length > 0) {
+        try {
+          const quoteResults = await getQuotes(manualSymbols);
+          for (const q of quoteResults) {
+            if (q.price > 0) quotes[q.symbol] = q.price;
+          }
+        } catch {}
+      }
+      const combined = [
+        ...brokerageHoldings,
+        ...manualHoldingsList.map(h => {
+          const currentPrice = quotes[h.symbol] || parseFloat(h.purchasePrice);
+          const currentTotalValue = (parseFloat(h.quantity) * currentPrice).toFixed(2);
+          const costBasis = h.totalValue;
+          return {
+            id: h.id,
+            userId: h.userId,
+            linkedAccountId: "manual",
+            symbol: h.symbol,
+            name: h.name,
+            quantity: h.quantity,
+            currentPrice: String(currentPrice),
+            totalValue: currentTotalValue,
+            costBasis,
+            currency: "USD",
+            securityType: "manual",
+            updatedAt: h.createdAt,
+          };
+        }),
+      ];
+      res.json(combined);
     } catch {
       res.status(500).json({ message: "Server error" });
     }
@@ -154,12 +191,198 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/portfolio/history", isAuthenticated, async (req, res) => {
     try {
+      const userId = req.session.userId!;
       const { since } = req.query;
       const sinceDate = since ? new Date(since as string) : undefined;
-      const history = await storage.getPortfolioHistory(req.session.userId!, sinceDate);
+      let history = await storage.getPortfolioHistory(userId, sinceDate);
+      if (history.length < 2) {
+        const allHistory = sinceDate ? await storage.getPortfolioHistory(userId) : history;
+        if (allHistory.length < 2) {
+          const [brokerageHoldings, manualHoldingsList, cashBalance] = await Promise.all([
+            storage.getHoldings(userId),
+            storage.getManualHoldings(userId),
+            storage.getCashBalance(userId),
+          ]);
+          const brokerageValue = brokerageHoldings.reduce((sum, h) => sum + parseFloat(h.totalValue), 0);
+          let manualValue = 0;
+          const manualSymbols = [...new Set(manualHoldingsList.map(h => h.symbol))];
+          if (manualSymbols.length > 0) {
+            try {
+              const quoteResults = await getQuotes(manualSymbols);
+              const priceMap: Record<string, number> = {};
+              for (const q of quoteResults) {
+                if (q.price > 0) priceMap[q.symbol] = q.price;
+              }
+              manualValue = manualHoldingsList.reduce((sum, h) => {
+                const price = priceMap[h.symbol] || parseFloat(h.purchasePrice);
+                return sum + parseFloat(h.quantity) * price;
+              }, 0);
+            } catch {
+              manualValue = manualHoldingsList.reduce((sum, h) => sum + parseFloat(h.totalValue), 0);
+            }
+          }
+          const total = brokerageValue + manualValue + parseFloat(cashBalance);
+          if (total > 0) {
+            const now = new Date();
+            if (allHistory.length === 0) {
+              const yesterday = new Date(now.getTime() - 86400000);
+              await storage.addPortfolioHistory(userId, total.toFixed(2), yesterday);
+            }
+            await storage.addPortfolioHistory(userId, total.toFixed(2), now);
+            history = await storage.getPortfolioHistory(userId, sinceDate);
+          }
+        }
+      }
       res.json(history);
     } catch {
       res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+  async function recordPortfolioSnapshot(userId: string, date?: Date) {
+    const [brokerageHoldings, manualHoldingsList, cashBalance] = await Promise.all([
+      storage.getHoldings(userId),
+      storage.getManualHoldings(userId),
+      storage.getCashBalance(userId),
+    ]);
+    const brokerageValue = brokerageHoldings.reduce((sum, h) => sum + parseFloat(h.totalValue), 0);
+    let manualValue = 0;
+    const manualSymbols = [...new Set(manualHoldingsList.map(h => h.symbol))];
+    if (manualSymbols.length > 0) {
+      try {
+        const quoteResults = await getQuotes(manualSymbols);
+        const priceMap: Record<string, number> = {};
+        for (const q of quoteResults) {
+          if (q.price > 0) priceMap[q.symbol] = q.price;
+        }
+        manualValue = manualHoldingsList.reduce((sum, h) => {
+          const price = priceMap[h.symbol] || parseFloat(h.purchasePrice);
+          return sum + parseFloat(h.quantity) * price;
+        }, 0);
+      } catch {
+        manualValue = manualHoldingsList.reduce((sum, h) => sum + parseFloat(h.totalValue), 0);
+      }
+    }
+    const total = brokerageValue + manualValue + parseFloat(cashBalance);
+    await storage.addPortfolioHistory(userId, total.toFixed(2), date);
+  }
+
+  app.get("/api/portfolio/manual-holdings", isAuthenticated, async (req, res) => {
+    try {
+      const holdings = await storage.getManualHoldings(req.session.userId!);
+      res.json(holdings);
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/portfolio/manual-holdings", isAuthenticated, async (req, res) => {
+    const result = insertManualHoldingSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ message: "Invalid holding data", errors: result.error.flatten().fieldErrors });
+    }
+    try {
+      const userId = req.session.userId!;
+      const holding = await storage.addManualHolding(userId, result.data);
+      const now = new Date();
+      if (result.data.purchaseDate) {
+        const purchaseDate = new Date(result.data.purchaseDate);
+        if (purchaseDate.getTime() < now.getTime() - 60000) {
+          await recordPortfolioSnapshot(userId, purchaseDate);
+        }
+      } else {
+        const history = await storage.getPortfolioHistory(userId);
+        if (history.length === 0) {
+          const yesterday = new Date(now.getTime() - 86400000);
+          await recordPortfolioSnapshot(userId, yesterday);
+        }
+      }
+      await recordPortfolioSnapshot(userId);
+      res.json(holding);
+    } catch (err: any) {
+      console.error("Add manual holding error:", err.message);
+      res.status(500).json({ message: "Failed to add holding" });
+    }
+  });
+
+  app.delete("/api/portfolio/manual-holdings/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteManualHolding(req.params.id, req.session.userId!);
+      await recordPortfolioSnapshot(req.session.userId!);
+      res.json({ success: true });
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/portfolio/manual-holdings/:id/sell", isAuthenticated, async (req, res) => {
+    const result = sellHoldingSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ message: "Invalid sell data", errors: result.error.flatten().fieldErrors });
+    }
+    try {
+      const sellResult = await storage.sellManualHolding(req.session.userId!, req.params.id, result.data);
+      await recordPortfolioSnapshot(req.session.userId!);
+      res.json(sellResult);
+    } catch (err: any) {
+      console.error("Sell holding error:", err.message);
+      res.status(400).json({ message: err.message || "Failed to sell holding" });
+    }
+  });
+
+  app.get("/api/portfolio/cash", isAuthenticated, async (req, res) => {
+    try {
+      const cashBalance = await storage.getCashBalance(req.session.userId!);
+      res.json({ cashBalance });
+    } catch {
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/portfolio/upload-statement", isAuthenticated, upload.single("statement"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      const result = await parseStatement(req.file.buffer);
+      res.json(result);
+    } catch (err: any) {
+      console.error("Statement parse error:", err.message);
+      res.status(500).json({ message: "Failed to parse statement" });
+    }
+  });
+
+  app.post("/api/portfolio/import-holdings", isAuthenticated, async (req, res) => {
+    const userId = req.session.userId!;
+    const { holdings: holdingsToImport } = req.body;
+    if (!Array.isArray(holdingsToImport)) {
+      return res.status(400).json({ message: "holdings must be an array" });
+    }
+    try {
+      const imported = [];
+      for (const h of holdingsToImport) {
+        if (h.symbol && h.quantity && h.purchasePrice) {
+          const holding = await storage.addManualHolding(userId, {
+            symbol: String(h.symbol).toUpperCase(),
+            name: String(h.name || h.symbol),
+            quantity: String(h.quantity),
+            purchasePrice: String(h.purchasePrice),
+          });
+          imported.push(holding);
+        }
+      }
+      const history = await storage.getPortfolioHistory(userId);
+      if (history.length === 0) {
+        const yesterday = new Date(Date.now() - 86400000);
+        await recordPortfolioSnapshot(userId, yesterday);
+      }
+      await recordPortfolioSnapshot(userId);
+      res.json({ imported: imported.length, holdings: imported });
+    } catch (err: any) {
+      console.error("Import holdings error:", err.message);
+      res.status(500).json({ message: "Failed to import holdings" });
     }
   });
 

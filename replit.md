@@ -7,7 +7,7 @@ This is a mobile-first financial tech investment platform built with a React fro
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
-Git push target: Run `npx tsx scripts/push-to-github.ts` to push to both the user's own GitHub (`playground`) and https://github.com/arrakis-workspace/playground (uses GitHub integration token).
+Git push target: Run `npx tsx scripts/push-to-github.ts` to push to both the user's own GitHub (`butterfli`) and https://github.com/arrakis-workspace/butterfli (uses GitHub integration token).
 
 ## System Architecture
 
@@ -24,7 +24,7 @@ Git push target: Run `npx tsx scripts/push-to-github.ts` to push to both the use
   - `ProfileSetup` — User details form (first/last name, contact, country) + notification settings toggles
   - `InvestorQuestion` — Yes/no investor question
   - `HandleSelection` — Choose unique handle (@username)
-  - `LinkInstitution` — Connect brokerage via SnapTrade
+  - `AddHoldings` — Three-tab page for adding holdings (upload statement, link brokerage via SnapTrade, manual entry with sell flow)
   - `SnaptradeCallback` — Post-SnapTrade sync page
   - `Home` — Dashboard (portfolio value, chart with index overlays, equity search, holdings, top equities, watchlists)
   - `Social` — Connections, pending requests, user search
@@ -42,19 +42,19 @@ Git push target: Run `npx tsx scripts/push-to-github.ts` to push to both the use
 - **Auth**: Google OAuth 2.0 with express-session stored in PostgreSQL via connect-pg-simple
 - **Storage Layer**: Abstracted behind an `IStorage` interface in `server/storage.ts`, backed by PostgreSQL via Drizzle ORM
 - **SnapTrade Integration**: `server/snaptrade.ts` handles user registration, login URL generation, account/holdings sync
-- **Market Data**: `server/market-data.ts` — Yahoo Finance integration via `yahoo-finance2` for index history, equity quotes, fundamentals, and search. In-memory caching with TTLs (60s quotes, 5min history, 1hr fundamentals)
+- **Market Data**: `server/market-data.ts` — Yahoo Finance integration via `yahoo-finance2` for index history, equity quotes, fundamentals, and search. In-memory caching with TTLs (60s quotes, 5min history, 1hr fundamentals). Manual holdings portfolio value uses current market prices via Yahoo Finance quotes (not purchase price)
 - **Dev Server**: Vite dev server integrated as Express middleware for HMR
 
 ### Shared Code
 - **Schema**: `shared/schema.ts` re-exports from `shared/models/auth.ts`, `shared/models/accounts.ts`, `shared/models/social.ts`
 - **Models**:
   - `auth.ts` — users table, sessions table, profile/handle validation schemas
-  - `accounts.ts` — linkedAccounts, holdings, portfolioHistory, marketIndexes, watchlists tables
+  - `accounts.ts` — linkedAccounts, holdings, portfolioHistory, marketIndexes, watchlists, manualHoldings, soldHoldings tables
   - `social.ts` — connections, messages tables, message validation schema
 
 ### Database
 - **ORM**: Drizzle ORM configured for PostgreSQL dialect (using `pg` driver)
-- **Tables**: users, sessions, linked_accounts, holdings, portfolio_history, market_indexes, watchlists, connections, messages
+- **Tables**: users, sessions, linked_accounts, holdings, portfolio_history, market_indexes, watchlists, manual_holdings, sold_holdings, connections, messages
 - **Connection**: Requires `DATABASE_URL` environment variable
 - **Session Store**: `connect-pg-simple` for Express session storage in PostgreSQL
 
@@ -63,7 +63,7 @@ Git push target: Run `npx tsx scripts/push-to-github.ts` to push to both the use
 - **Profile**: POST `/api/profile` (update profile), POST `/api/handle` (set handle), GET `/api/handle/check/:handle`
 - **Notifications**: GET `/api/notifications/settings`, PUT `/api/notifications/settings`
 - **SnapTrade**: POST `/api/snaptrade/register`, GET `/api/snaptrade/login-url`, POST `/api/snaptrade/sync`
-- **Portfolio**: GET `/api/portfolio/holdings`, GET `/api/portfolio/accounts`, GET `/api/portfolio/history`
+- **Portfolio**: GET `/api/portfolio/holdings` (combined brokerage + manual), GET `/api/portfolio/accounts`, GET `/api/portfolio/history`, GET `/api/portfolio/manual-holdings`, POST `/api/portfolio/manual-holdings`, DELETE `/api/portfolio/manual-holdings/:id`, POST `/api/portfolio/manual-holdings/:id/sell`, GET `/api/portfolio/cash`, POST `/api/portfolio/upload-statement` (PDF parse), POST `/api/portfolio/import-holdings` (bulk import)
 - **Market Data**: GET `/api/market/indexes` (index time-series), GET `/api/market/quotes` (equity quotes), GET `/api/market/top-equities` (top 10 by sort), GET `/api/market/search` (equity search), GET `/api/market/equity/:symbol` (full equity detail), GET `/api/market/equity/:symbol/chart` (equity chart data)
 - **Watchlists**: GET `/api/watchlists`, POST `/api/watchlists`, PUT `/api/watchlists/:id`, DELETE `/api/watchlists/:id`
 - **Social**: GET `/api/users/search`, POST `/api/connections/request`, GET `/api/connections`, GET `/api/connections/pending`, POST `/api/connections/:id/accept`, POST `/api/connections/:id/reject`, DELETE `/api/connections/:userId` (remove connection), GET `/api/connections/unseen-count`, POST `/api/connections/mark-seen`

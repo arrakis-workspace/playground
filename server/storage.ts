@@ -1,6 +1,6 @@
-import { type User, type UpsertUser, type UpdateNotificationSettings, type LinkedAccount, type InsertLinkedAccount, type Holding, type InsertHolding, type PortfolioHistoryEntry, type Connection, type InsertConnection, type Message, type InsertMessage, type Watchlist, type InsertWatchlist } from "@shared/schema";
+import { type User, type UpsertUser, type UpdateNotificationSettings, type LinkedAccount, type InsertLinkedAccount, type Holding, type InsertHolding, type PortfolioHistoryEntry, type Connection, type InsertConnection, type Message, type InsertMessage, type Watchlist, type InsertWatchlist, type ManualHolding, type InsertManualHolding, type SellHoldingData } from "@shared/schema";
 import { db } from "./db";
-import { users, linkedAccounts, holdings, portfolioHistory, connections, messages, watchlists } from "@shared/schema";
+import { users, linkedAccounts, holdings, portfolioHistory, connections, messages, watchlists, manualHoldings, soldHoldings } from "@shared/schema";
 import { eq, or, and, ilike, desc, asc, sql, gt } from "drizzle-orm";
 
 export interface IStorage {
@@ -23,7 +23,7 @@ export interface IStorage {
   upsertHoldings(userId: string, linkedAccountId: string, holdingsData: InsertHolding[]): Promise<void>;
   getHoldings(userId: string): Promise<Holding[]>;
 
-  addPortfolioHistory(userId: string, totalValue: string): Promise<void>;
+  addPortfolioHistory(userId: string, totalValue: string, date?: Date): Promise<void>;
   getPortfolioHistory(userId: string, since?: Date): Promise<PortfolioHistoryEntry[]>;
 
   createConnection(requesterId: string, receiverId: string): Promise<Connection>;
@@ -46,6 +46,12 @@ export interface IStorage {
 
   deleteConnection(userId: string, otherUserId: string): Promise<void>;
   deleteConversation(userId: string, otherUserId: string): Promise<void>;
+
+  addManualHolding(userId: string, data: InsertManualHolding): Promise<ManualHolding>;
+  getManualHoldings(userId: string): Promise<ManualHolding[]>;
+  deleteManualHolding(id: string, userId: string): Promise<void>;
+  sellManualHolding(userId: string, holdingId: string, sellData: SellHoldingData): Promise<{ cashBalance: string }>;
+  getCashBalance(userId: string): Promise<string>;
 
   deleteUser(userId: string): Promise<void>;
   reactivateUser(id: string, data: { email: string | null; firstName: string | null; lastName: string | null; profileImageUrl: string | null }): Promise<User>;
@@ -181,8 +187,8 @@ class DatabaseStorage implements IStorage {
     return db.select().from(holdings).where(eq(holdings.userId, userId));
   }
 
-  async addPortfolioHistory(userId: string, totalValue: string): Promise<void> {
-    await db.insert(portfolioHistory).values({ userId, date: new Date(), totalValue });
+  async addPortfolioHistory(userId: string, totalValue: string, date?: Date): Promise<void> {
+    await db.insert(portfolioHistory).values({ userId, date: date || new Date(), totalValue });
   }
 
   async getPortfolioHistory(userId: string, since?: Date): Promise<PortfolioHistoryEntry[]> {
@@ -338,11 +344,79 @@ class DatabaseStorage implements IStorage {
     );
   }
 
+  async addManualHolding(userId: string, data: InsertManualHolding): Promise<ManualHolding> {
+    const totalValue = (parseFloat(data.quantity) * parseFloat(data.purchasePrice)).toFixed(2);
+    const purchaseDate = data.purchaseDate ? new Date(data.purchaseDate) : null;
+    const [holding] = await db.insert(manualHoldings).values({
+      userId,
+      symbol: data.symbol,
+      name: data.name,
+      quantity: data.quantity,
+      purchasePrice: data.purchasePrice,
+      purchaseDate,
+      totalValue,
+    }).returning();
+    return holding;
+  }
+
+  async getManualHoldings(userId: string): Promise<ManualHolding[]> {
+    return db.select().from(manualHoldings).where(eq(manualHoldings.userId, userId)).orderBy(desc(manualHoldings.createdAt));
+  }
+
+  async deleteManualHolding(id: string, userId: string): Promise<void> {
+    await db.delete(manualHoldings).where(and(eq(manualHoldings.id, id), eq(manualHoldings.userId, userId)));
+  }
+
+  async sellManualHolding(userId: string, holdingId: string, sellData: SellHoldingData): Promise<{ cashBalance: string }> {
+    const [holding] = await db.select().from(manualHoldings).where(and(eq(manualHoldings.id, holdingId), eq(manualHoldings.userId, userId)));
+    if (!holding) throw new Error("Holding not found");
+
+    const currentQty = parseFloat(holding.quantity);
+    const sellQty = sellData.sharesSold;
+    if (sellQty > currentQty) throw new Error("Cannot sell more shares than owned");
+
+    const sellValue = (sellQty * sellData.sellPrice).toFixed(2);
+
+    await db.insert(soldHoldings).values({
+      userId,
+      manualHoldingId: holdingId,
+      symbol: holding.symbol,
+      sharesSold: sellQty.toString(),
+      sellPrice: sellData.sellPrice.toString(),
+      sellValue,
+    });
+
+    if (sellQty >= currentQty) {
+      await db.delete(manualHoldings).where(eq(manualHoldings.id, holdingId));
+    } else {
+      const newQty = currentQty - sellQty;
+      const newTotal = (newQty * parseFloat(holding.purchasePrice)).toFixed(2);
+      await db.update(manualHoldings).set({
+        quantity: newQty.toString(),
+        totalValue: newTotal,
+      }).where(eq(manualHoldings.id, holdingId));
+    }
+
+    const user = await this.getUser(userId);
+    const currentCash = parseFloat(user?.cashBalance || "0");
+    const newCash = (currentCash + parseFloat(sellValue)).toFixed(2);
+    await db.update(users).set({ cashBalance: newCash, updatedAt: new Date() }).where(eq(users.id, userId));
+
+    return { cashBalance: newCash };
+  }
+
+  async getCashBalance(userId: string): Promise<string> {
+    const user = await this.getUser(userId);
+    return user?.cashBalance || "0";
+  }
+
   async deleteUser(userId: string): Promise<void> {
     const user = await this.getUser(userId);
     if (!user) return;
 
     await db.delete(watchlists).where(eq(watchlists.userId, userId));
+    await db.delete(soldHoldings).where(eq(soldHoldings.userId, userId));
+    await db.delete(manualHoldings).where(eq(manualHoldings.userId, userId));
     await db.delete(holdings).where(eq(holdings.userId, userId));
     await db.delete(linkedAccounts).where(eq(linkedAccounts.userId, userId));
     await db.delete(portfolioHistory).where(eq(portfolioHistory.userId, userId));

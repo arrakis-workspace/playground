@@ -230,10 +230,10 @@ async function main() {
   const repos: { owner: string; name: string }[] = [];
 
   for (const owner of [user.login, 'arrakis-workspace']) {
-    const key = `${owner}/playground`;
+    const key = `${owner}/butterfli`;
     if (!targets.has(key)) {
       targets.add(key);
-      repos.push({ owner, name: 'playground' });
+      repos.push({ owner, name: 'butterfli' });
     }
   }
 
