@@ -6,7 +6,7 @@ import { updateProfileSchema, updateHandleSchema, sendMessageSchema, updateNotif
 import multer from "multer";
 import { parseStatement } from "./statement-parser";
 import { sendConnectionRequestEmail } from "./email";
-import { getIndexHistory, getQuotes, getTopEquities, searchEquities, getEquityDetail, getEquityChart, INDEX_SYMBOLS } from "./market-data";
+import { getIndexHistory, getQuotes, getTopEquities, searchEquities, getEquityDetail, getEquityChart, getHistoricalPrices, INDEX_SYMBOLS } from "./market-data";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
@@ -196,41 +196,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sinceDate = since ? new Date(since as string) : undefined;
       let history = await storage.getPortfolioHistory(userId, sinceDate);
       if (history.length < 2) {
-        const allHistory = sinceDate ? await storage.getPortfolioHistory(userId) : history;
+        const allHistory = await storage.getPortfolioHistory(userId);
         if (allHistory.length < 2) {
-          const [brokerageHoldings, manualHoldingsList, cashBalance] = await Promise.all([
-            storage.getHoldings(userId),
-            storage.getManualHoldings(userId),
-            storage.getCashBalance(userId),
-          ]);
-          const brokerageValue = brokerageHoldings.reduce((sum, h) => sum + parseFloat(h.totalValue), 0);
-          let manualValue = 0;
-          const manualSymbols = [...new Set(manualHoldingsList.map(h => h.symbol))];
-          if (manualSymbols.length > 0) {
-            try {
-              const quoteResults = await getQuotes(manualSymbols);
-              const priceMap: Record<string, number> = {};
-              for (const q of quoteResults) {
-                if (q.price > 0) priceMap[q.symbol] = q.price;
-              }
-              manualValue = manualHoldingsList.reduce((sum, h) => {
-                const price = priceMap[h.symbol] || parseFloat(h.purchasePrice);
-                return sum + parseFloat(h.quantity) * price;
-              }, 0);
-            } catch {
-              manualValue = manualHoldingsList.reduce((sum, h) => sum + parseFloat(h.totalValue), 0);
-            }
+          await recordPortfolioSnapshot(userId);
+          if (allHistory.length === 0) {
+            const yesterday = new Date(Date.now() - 86400000);
+            await recordPortfolioSnapshot(userId, yesterday);
           }
-          const total = brokerageValue + manualValue + parseFloat(cashBalance);
-          if (total > 0) {
-            const now = new Date();
-            if (allHistory.length === 0) {
-              const yesterday = new Date(now.getTime() - 86400000);
-              await storage.addPortfolioHistory(userId, total.toFixed(2), yesterday);
-            }
-            await storage.addPortfolioHistory(userId, total.toFixed(2), now);
-            history = await storage.getPortfolioHistory(userId, sinceDate);
-          }
+          history = await storage.getPortfolioHistory(userId, sinceDate);
+        } else if (sinceDate) {
+          const lastTwo = allHistory.slice(-2);
+          history = lastTwo;
         }
       }
       res.json(history);
@@ -289,8 +265,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       if (result.data.purchaseDate) {
         const purchaseDate = new Date(result.data.purchaseDate);
-        if (purchaseDate.getTime() < now.getTime() - 60000) {
-          await recordPortfolioSnapshot(userId, purchaseDate);
+        if (purchaseDate.getTime() < now.getTime() - 86400000) {
+          const historicalPrices = await getHistoricalPrices(holding.symbol, purchaseDate);
+          if (historicalPrices.length > 0) {
+            const [existingBrokerage, existingManual, cashBalance] = await Promise.all([
+              storage.getHoldings(userId),
+              storage.getManualHoldings(userId),
+              storage.getCashBalance(userId),
+            ]);
+            const brokerageValue = existingBrokerage.reduce((sum, h) => sum + parseFloat(h.totalValue), 0);
+            const otherManualValue = existingManual
+              .filter(h => h.id !== holding.id)
+              .reduce((sum, h) => sum + parseFloat(h.totalValue), 0);
+            const cash = parseFloat(cashBalance);
+            for (const point of historicalPrices) {
+              const thisHoldingValue = parseFloat(holding.quantity) * point.price;
+              const total = brokerageValue + otherManualValue + thisHoldingValue + cash;
+              await storage.addPortfolioHistory(userId, total.toFixed(2), new Date(point.date));
+            }
+            await recordPortfolioSnapshot(userId);
+          } else {
+            await recordPortfolioSnapshot(userId, purchaseDate);
+            await recordPortfolioSnapshot(userId);
+          }
+        } else {
+          await recordPortfolioSnapshot(userId);
         }
       } else {
         const history = await storage.getPortfolioHistory(userId);
@@ -298,8 +297,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const yesterday = new Date(now.getTime() - 86400000);
           await recordPortfolioSnapshot(userId, yesterday);
         }
+        await recordPortfolioSnapshot(userId);
       }
-      await recordPortfolioSnapshot(userId);
       res.json(holding);
     } catch (err: any) {
       console.error("Add manual holding error:", err.message);
@@ -309,8 +308,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/portfolio/manual-holdings/:id", isAuthenticated, async (req, res) => {
     try {
-      await storage.deleteManualHolding(req.params.id, req.session.userId!);
-      await recordPortfolioSnapshot(req.session.userId!);
+      const userId = req.session.userId!;
+      await storage.deleteManualHolding(req.params.id, userId);
+      const [remainingBrokerage, remainingManual] = await Promise.all([
+        storage.getHoldings(userId),
+        storage.getManualHoldings(userId),
+      ]);
+      if (remainingBrokerage.length > 0 || remainingManual.length > 0) {
+        await recordPortfolioSnapshot(userId);
+      }
       res.json({ success: true });
     } catch {
       res.status(500).json({ message: "Server error" });

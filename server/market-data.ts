@@ -139,6 +139,21 @@ async function fetchChartData(tickerSymbol: string, range: string): Promise<Inde
     }));
 }
 
+export async function getHistoricalPrices(symbol: string, fromDate: Date): Promise<{ date: string; price: number }[]> {
+  try {
+    const result = await yahooFinance.chart(symbol, { period1: fromDate, interval: "1d" });
+    return (result.quotes || [])
+      .filter((q: any) => q.close != null)
+      .map((q: any) => ({
+        date: new Date(q.date).toISOString(),
+        price: q.close as number,
+      }));
+  } catch (err: any) {
+    console.error(`Failed to fetch historical prices for ${symbol}:`, err.message);
+    return [];
+  }
+}
+
 export async function getIndexHistory(symbol: string, range: string): Promise<IndexHistoryResult> {
   const cacheKey = `${symbol}:${range}`;
   const cached = historyCache.get(cacheKey);

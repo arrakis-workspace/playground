@@ -29,7 +29,8 @@ const INDEX_TOGGLES = [
   { key: "^IXIC", label: "NASDAQ", color: "hsl(188, 78%, 46%)" },
 ] as const;
 
-const PORTFOLIO_COLOR = "hsl(239, 84%, 67%)";
+const PORTFOLIO_COLOR_UP = "#10b981";
+const PORTFOLIO_COLOR_DOWN = "#ef4444";
 
 const TOP_EQUITIES_SORT_OPTIONS = [
   { label: "Market Cap", value: "marketCap" },
@@ -180,6 +181,8 @@ export function Dashboard({ user }: DashboardProps) {
   }, [indexData]);
 
   const hasPortfolioData = portfolioSeries.length > 1;
+  const portfolioColor = hasPortfolioData && portfolioSeries[portfolioSeries.length - 1].value >= 0
+    ? PORTFOLIO_COLOR_UP : PORTFOLIO_COLOR_DOWN;
   const hasAnyIndexData = Object.values(indexSeries).some(s => s.length > 0);
   const showChart = hasPortfolioData || hasAnyIndexData;
 
@@ -310,7 +313,7 @@ export function Dashboard({ user }: DashboardProps) {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-card border border-border"
               data-testid="chip-portfolio"
             >
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PORTFOLIO_COLOR }} />
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: portfolioColor }} />
               <span className="text-foreground">Portfolio</span>
             </span>
           )}
@@ -357,7 +360,7 @@ export function Dashboard({ user }: DashboardProps) {
                 />
                 <YAxis
                   hide
-                  domain={["dataMin - 1", "dataMax + 1"]}
+                  domain={[(dataMin: number) => Math.min(dataMin - 1, -1), (dataMax: number) => Math.max(dataMax + 1, 1)]}
                 />
                 <ReferenceLine
                   y={0}
@@ -387,14 +390,25 @@ export function Dashboard({ user }: DashboardProps) {
                       : "";
                     return [`${pctStr}  ${rawStr}`, label];
                   }}
-                  labelFormatter={(label) => label}
+                  labelFormatter={(_label, payload) => {
+                    const rawDate = payload?.[0]?.payload?.date;
+                    if (rawDate) {
+                      const d = new Date(rawDate);
+                      const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+                      if (timeRange === "1D") {
+                        return dateStr + ", " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+                      }
+                      return dateStr;
+                    }
+                    return _label;
+                  }}
                 />
 
                 {hasPortfolioData && (
                   <Line
                     type="monotone"
                     dataKey="portfolio"
-                    stroke={PORTFOLIO_COLOR}
+                    stroke={portfolioColor}
                     strokeWidth={2}
                     dot={false}
                     connectNulls

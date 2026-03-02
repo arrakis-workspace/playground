@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { useState, useMemo } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
 import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CompanyLogo } from "@/components/home/EquityList";
@@ -95,7 +95,10 @@ export default function EquityDetail() {
   }, [chartPoints, timeRange]);
 
   const priceColor = equity?.changePercent >= 0 ? "text-emerald-600" : "text-red-500";
-  const lineColor = equity?.changePercent >= 0 ? "#10b981" : "#ef4444";
+  const chartUp = chartData.length >= 2
+    ? chartData[chartData.length - 1].close >= chartData[0].close
+    : equity?.changePercent >= 0;
+  const lineColor = chartUp ? "#10b981" : "#ef4444";
 
   if (isLoading) {
     return (
@@ -203,7 +206,13 @@ export default function EquityDetail() {
                   interval="preserveStartEnd"
                   minTickGap={40}
                 />
-                <YAxis hide domain={["dataMin", "dataMax"]} />
+                <YAxis hide domain={[(dataMin: number) => Math.min(dataMin - 1, chartData[0]?.close - 1), (dataMax: number) => Math.max(dataMax + 1, chartData[0]?.close + 1)]} />
+                <ReferenceLine
+                  y={chartData[0]?.close}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.5}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
@@ -213,13 +222,20 @@ export default function EquityDetail() {
                     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                     color: "hsl(var(--foreground))",
                   }}
-                  formatter={(value: number) => [`$${formatNumber(value)}`, equity.symbol]}
+                  formatter={(value: number) => {
+                    const startPrice = chartData[0]?.close;
+                    const pctChange = startPrice ? ((value / startPrice - 1) * 100) : 0;
+                    const sign = pctChange >= 0 ? "+" : "";
+                    return [`$${formatNumber(value)} (${sign}${pctChange.toFixed(2)}%)`, equity.symbol];
+                  }}
                   labelFormatter={(_label, payload) => {
                     if (payload?.[0]?.payload?.rawDate) {
                       const d = new Date(payload[0].payload.rawDate);
+                      const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                       if (timeRange === "1D") {
-                        return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+                        return dateStr + ", " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
                       }
+                      return dateStr;
                     }
                     return _label;
                   }}

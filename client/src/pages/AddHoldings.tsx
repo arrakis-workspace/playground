@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -316,6 +316,40 @@ function ManualEntryTab({ holdings, onChanged }: { holdings: any[]; onChanged: (
   const [purchasePrice, setPurchasePrice] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
   const [sellDialog, setSellDialog] = useState<{ holdingId: string; symbol: string; maxShares: number } | null>(null);
+  const [tickerQuery, setTickerQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ symbol: string; name: string }[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (tickerQuery.length < 1) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const res = await fetch(`/api/market/search?q=${encodeURIComponent(tickerQuery)}`, { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          setSuggestions(data.slice(0, 8));
+        }
+      } catch {}
+      setSearchLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [tickerQuery]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const qty = parseFloat(quantity) || 0;
   const price = parseFloat(purchasePrice) || 0;
@@ -366,16 +400,50 @@ function ManualEntryTab({ holdings, onChanged }: { holdings: any[]; onChanged: (
       <h3 className="text-foreground font-semibold mb-4" data-testid="text-manual-title">Add Manually</h3>
 
       <div className="space-y-3">
-        <div>
+        <div className="relative" ref={suggestionsRef}>
           <Label htmlFor="symbol" className="text-xs text-muted-foreground">Ticker Symbol</Label>
           <Input
             id="symbol"
             value={symbol}
-            onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+            onChange={(e) => {
+              const val = e.target.value.toUpperCase();
+              setSymbol(val);
+              setTickerQuery(val);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
             placeholder="e.g. AAPL"
             className="h-10 mt-1 rounded-xl"
             data-testid="input-symbol"
+            autoComplete="off"
           />
+          {showSuggestions && symbol.length > 0 && (suggestions.length > 0 || searchLoading) && (
+            <div className="absolute z-20 left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg max-h-[240px] overflow-y-auto">
+              {searchLoading && suggestions.length === 0 ? (
+                <div className="px-3 py-2 text-xs text-muted-foreground">Searching...</div>
+              ) : (
+                suggestions.map((s) => (
+                  <button
+                    key={s.symbol}
+                    type="button"
+                    className="w-full text-left px-3 py-2.5 hover:bg-muted/50 transition-colors flex items-center justify-between gap-2 border-b border-border last:border-0"
+                    data-testid={`suggestion-${s.symbol}`}
+                    onClick={() => {
+                      setSymbol(s.symbol);
+                      setName(s.name);
+                      setShowSuggestions(false);
+                      setSuggestions([]);
+                    }}
+                  >
+                    <div className="min-w-0">
+                      <span className="text-foreground font-medium text-sm">{s.symbol}</span>
+                      <span className="text-muted-foreground text-xs ml-2 truncate">{s.name}</span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         <div>

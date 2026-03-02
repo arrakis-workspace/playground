@@ -131,9 +131,9 @@ export function EquityList({
           className="overflow-y-auto"
           style={{ maxHeight: items.length > visibleCount ? `${visibleCount * 60}px` : undefined }}
         >
-          {items.map((item) => (
+          {items.map((item, idx) => (
             <div
-              key={item.symbol}
+              key={`${item.symbol}-${idx}`}
               className="flex items-center justify-between py-3 border-b border-border last:border-0 -mx-2 px-2 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
               data-testid={`equity-item-${testIdPrefix}-${item.symbol}`}
               onClick={() => setLocation(`/equity/${item.symbol}`)}
