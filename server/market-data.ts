@@ -44,6 +44,7 @@ interface QuoteResult {
   changePercent: number;
   marketCap: number | null;
   currency: string;
+  previousClose: number | null;
 }
 
 interface IndexHistoryPoint {
@@ -72,6 +73,7 @@ const historyCache = new Map<string, { data: IndexHistoryResult; timestamp: numb
 const fundamentalsCache = new Map<string, { data: { revenue: number | null; profit: number | null }; timestamp: number }>();
 const equityDetailCache = new Map<string, { data: EquityDetailFull; timestamp: number }>();
 const searchCache = new Map<string, { data: SearchResult[]; timestamp: number }>();
+const equityChartCache = new Map<string, { data: EquityChartResult; timestamp: number }>();
 
 const QUOTE_TTL = 60 * 1000;
 const HISTORY_TTL = 5 * 60 * 1000;
@@ -87,9 +89,9 @@ function getRangeParams(range: string): { period1: Date; interval: "1d" | "1wk" 
       start.setDate(start.getDate() - 1);
       return { period1: start, interval: "5m" };
     }
-    case "1W": {
+    case "5D": {
       const start = new Date(now);
-      start.setDate(start.getDate() - 7);
+      start.setDate(start.getDate() - 5);
       return { period1: start, interval: "15m" };
     }
     case "1M": {
@@ -97,10 +99,19 @@ function getRangeParams(range: string): { period1: Date; interval: "1d" | "1wk" 
       start.setMonth(start.getMonth() - 1);
       return { period1: start, interval: "1d" };
     }
+    case "6M": {
+      const start = new Date(now);
+      start.setMonth(start.getMonth() - 6);
+      return { period1: start, interval: "1d" };
+    }
+    case "YTD": {
+      const start = new Date(now.getFullYear(), 0, 1);
+      return { period1: start, interval: "1d" };
+    }
     case "1Y": {
       const start = new Date(now);
       start.setFullYear(start.getFullYear() - 1);
-      return { period1: start, interval: "1d" };
+      return { period1: start, interval: "1wk" };
     }
     case "5Y": {
       const start = new Date(now);
@@ -124,19 +135,55 @@ export interface IndexHistoryResult {
   isFutures: boolean;
 }
 
-async function fetchChartData(tickerSymbol: string, range: string): Promise<IndexHistoryPoint[]> {
+export interface EquityChartResult {
+  points: IndexHistoryPoint[];
+  previousClose: number | null;
+  currentPrice: number | null;
+}
+
+function isRegularHours(date: Date): boolean {
+  const etHour = date.toLocaleString("en-US", { timeZone: "America/New_York", hour: "numeric", hour12: false });
+  const etMinute = date.toLocaleString("en-US", { timeZone: "America/New_York", minute: "numeric" });
+  const h = parseInt(etHour, 10);
+  const m = parseInt(etMinute, 10);
+  const totalMinutes = h * 60 + m;
+  const openMinutes = 9 * 60 + 30;
+  const closeMinutes = 16 * 60;
+  return totalMinutes >= openMinutes && totalMinutes < closeMinutes;
+}
+
+function getETDateString(date: Date): string {
+  return date.toLocaleDateString("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" });
+}
+
+async function fetchChartData(tickerSymbol: string, range: string): Promise<EquityChartResult> {
   const { period1, interval } = getRangeParams(range);
+  const isIntraday = interval === "5m" || interval === "15m";
   const result = await yahooFinance.chart(tickerSymbol, { period1, interval });
-  return (result.quotes || [])
-    .filter((q: any) => q.close != null)
+
+  let points = (result.quotes || [])
+    .filter((q: any) => {
+      if (q.close == null) return false;
+      if (isIntraday) return isRegularHours(new Date(q.date));
+      return true;
+    })
     .map((q: any) => ({
       date: new Date(q.date).toISOString(),
-      close: q.close,
+      close: q.close as number,
       open: q.open ?? null,
       high: q.high ?? null,
       low: q.low ?? null,
       volume: q.volume ?? null,
     }));
+
+  if (range === "1D" && points.length > 0) {
+    const lastDate = getETDateString(new Date(points[points.length - 1].date));
+    points = points.filter(p => getETDateString(new Date(p.date)) === lastDate);
+  }
+
+  const previousClose = result.meta?.chartPreviousClose ?? result.meta?.previousClose ?? null;
+  const currentPrice = result.meta?.regularMarketPrice ?? null;
+  return { points, previousClose, currentPrice };
 }
 
 export async function getHistoricalPrices(symbol: string, fromDate: Date): Promise<{ date: string; price: number }[]> {
@@ -162,15 +209,15 @@ export async function getIndexHistory(symbol: string, range: string): Promise<In
   }
 
   try {
-    let points = await fetchChartData(symbol, range);
+    let chartResult = await fetchChartData(symbol, range);
     let isFutures = false;
 
-    if (points.length === 0 && INDEX_FUTURES[symbol]) {
-      points = await fetchChartData(INDEX_FUTURES[symbol], range);
-      isFutures = points.length > 0;
+    if (chartResult.points.length === 0 && INDEX_FUTURES[symbol]) {
+      chartResult = await fetchChartData(INDEX_FUTURES[symbol], range);
+      isFutures = chartResult.points.length > 0;
     }
 
-    const result: IndexHistoryResult = { points, isFutures };
+    const result: IndexHistoryResult = { points: chartResult.points, isFutures };
     historyCache.set(cacheKey, { data: result, timestamp: Date.now() });
     return result;
   } catch (err: any) {
@@ -207,6 +254,7 @@ export async function getQuotes(symbols: string[]): Promise<QuoteResult[]> {
             changePercent: quote.regularMarketChangePercent || 0,
             marketCap: quote.marketCap || null,
             currency: quote.currency || "USD",
+            previousClose: quote.regularMarketPreviousClose || null,
           };
           quoteCache.set(sym, { data: result, timestamp: Date.now() });
           return result;
@@ -376,47 +424,21 @@ export async function getEquityDetail(symbol: string): Promise<EquityDetailFull 
   }
 }
 
-export async function getEquityChart(symbol: string, range: string): Promise<IndexHistoryPoint[]> {
+export async function getEquityChart(symbol: string, range: string): Promise<EquityChartResult> {
   const cacheKey = `equity:${symbol}:${range}`;
-  const cached = historyCache.get(cacheKey);
+  const cached = equityChartCache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < HISTORY_TTL) {
-    return cached.data.points;
+    return cached.data;
   }
 
   try {
-    let points = await fetchChartData(symbol, range);
+    const result = await fetchChartData(symbol, range);
 
-    if (points.length === 0 && range === "1D") {
-      const now = new Date();
-      const start = new Date(now);
-      start.setDate(start.getDate() - 7);
-      const result = await yahooFinance.chart(symbol, { period1: start, interval: "5m" });
-      const allPoints = (result.quotes || [])
-        .filter((q: any) => q.close != null)
-        .map((q: any) => ({
-          date: new Date(q.date).toISOString(),
-          close: q.close,
-          open: q.open ?? null,
-          high: q.high ?? null,
-          low: q.low ?? null,
-          volume: q.volume ?? null,
-        }));
-
-      if (allPoints.length > 0) {
-        const toET = (iso: string) => {
-          const d = new Date(iso);
-          return d.toLocaleDateString("en-US", { timeZone: "America/New_York" });
-        };
-        const lastTradingDay = toET(allPoints[allPoints.length - 1].date);
-        points = allPoints.filter(p => toET(p.date) === lastTradingDay);
-      }
-    }
-
-    historyCache.set(cacheKey, { data: { points, isFutures: false }, timestamp: Date.now() });
-    return points;
+    equityChartCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
   } catch (err: any) {
     console.error(`Failed to fetch chart for ${symbol}:`, err.message);
-    return cached?.data.points || [];
+    return cached?.data || { points: [], previousClose: null, currentPrice: null };
   }
 }
 

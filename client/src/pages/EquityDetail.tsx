@@ -8,8 +8,10 @@ import { CompanyLogo } from "@/components/home/EquityList";
 
 const TIME_RANGES = [
   { label: "1D" },
-  { label: "1W" },
+  { label: "5D" },
   { label: "1M" },
+  { label: "6M" },
+  { label: "YTD" },
   { label: "1Y" },
   { label: "5Y" },
   { label: "All" },
@@ -20,12 +22,21 @@ interface ChartPoint {
   close: number;
 }
 
+interface ChartResponse {
+  points: ChartPoint[];
+  previousClose: number | null;
+  currentPrice: number | null;
+}
+
 function formatDateLabel(dateStr: string, range: string): string {
   const d = new Date(dateStr);
   if (range === "1D") {
     return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   }
-  if (range === "1W" || range === "1M") {
+  if (range === "5D" || range === "1M") {
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+  if (range === "6M" || range === "YTD") {
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
   if (range === "1Y") {
@@ -71,7 +82,7 @@ export default function EquityDetail() {
     gcTime: 10 * 60 * 1000,
   });
 
-  const { data: chartPoints = [], isLoading: chartLoading, isError: chartError } = useQuery<ChartPoint[]>({
+  const { data: chartResponse, isLoading: chartLoading, isError: chartError } = useQuery<ChartResponse>({
     queryKey: ["/api/market/equity", symbol, "chart", timeRange],
     queryFn: async () => {
       const res = await fetch(`/api/market/equity/${symbol}/chart?range=${timeRange}`, { credentials: "include" });
@@ -85,18 +96,21 @@ export default function EquityDetail() {
   });
 
   const chartData = useMemo(() => {
-    return chartPoints
+    return (chartResponse?.points || [])
       .filter((p) => p.close != null)
       .map((p) => ({
         dateLabel: formatDateLabel(p.date, timeRange),
         rawDate: p.date,
         close: p.close,
       }));
-  }, [chartPoints, timeRange]);
+  }, [chartResponse, timeRange]);
+
+  const chartPreviousClose = chartResponse?.previousClose ?? null;
 
   const priceColor = equity?.changePercent >= 0 ? "text-emerald-600" : "text-red-500";
+  const chartRefPrice = chartPreviousClose ?? chartData[0]?.close;
   const chartUp = chartData.length >= 2
-    ? chartData[chartData.length - 1].close >= chartData[0].close
+    ? chartData[chartData.length - 1].close >= (chartRefPrice ?? chartData[0]?.close)
     : equity?.changePercent >= 0;
   const lineColor = chartUp ? "#10b981" : "#ef4444";
 
@@ -206,9 +220,27 @@ export default function EquityDetail() {
                   interval="preserveStartEnd"
                   minTickGap={40}
                 />
-                <YAxis hide domain={[(dataMin: number) => Math.min(dataMin - 1, chartData[0]?.close - 1), (dataMax: number) => Math.max(dataMax + 1, chartData[0]?.close + 1)]} />
+                <YAxis
+                  orientation="right"
+                  tick={{ fill: "hsl(215, 16%, 47%)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={55}
+                  tickFormatter={(v: number) => `$${v.toFixed(v >= 1000 ? 0 : 2)}`}
+                  domain={[(dataMin: number) => {
+                    const ref = chartRefPrice ?? chartData[0]?.close ?? dataMin;
+                    const low = Math.min(dataMin, ref);
+                    const pad = (Math.max(dataMin, ref) - low) * 0.05 || 1;
+                    return low - pad;
+                  }, (dataMax: number) => {
+                    const ref = chartRefPrice ?? chartData[0]?.close ?? dataMax;
+                    const high = Math.max(dataMax, ref);
+                    const pad = (high - Math.min(dataMax, ref)) * 0.05 || 1;
+                    return high + pad;
+                  }]}
+                />
                 <ReferenceLine
-                  y={chartData[0]?.close}
+                  y={chartRefPrice ?? chartData[0]?.close}
                   stroke="hsl(var(--muted-foreground))"
                   strokeDasharray="4 4"
                   strokeOpacity={0.5}
@@ -223,7 +255,7 @@ export default function EquityDetail() {
                     color: "hsl(var(--foreground))",
                   }}
                   formatter={(value: number) => {
-                    const startPrice = chartData[0]?.close;
+                    const startPrice = chartRefPrice ?? chartData[0]?.close;
                     const pctChange = startPrice ? ((value / startPrice - 1) * 100) : 0;
                     const sign = pctChange >= 0 ? "+" : "";
                     return [`$${formatNumber(value)} (${sign}${pctChange.toFixed(2)}%)`, equity.symbol];

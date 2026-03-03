@@ -143,19 +143,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getManualHoldings(req.session.userId!),
       ]);
       const manualSymbols = [...new Set(manualHoldingsList.map(h => h.symbol))];
-      let quotes: Record<string, number> = {};
+      let quotesMap: Record<string, { price: number; changePercent: number }> = {};
       if (manualSymbols.length > 0) {
         try {
           const quoteResults = await getQuotes(manualSymbols);
           for (const q of quoteResults) {
-            if (q.price > 0) quotes[q.symbol] = q.price;
+            if (q.price > 0) quotesMap[q.symbol] = { price: q.price, changePercent: q.changePercent || 0 };
           }
         } catch {}
       }
       const combined = [
         ...brokerageHoldings,
         ...manualHoldingsList.map(h => {
-          const currentPrice = quotes[h.symbol] || parseFloat(h.purchasePrice);
+          const quote = quotesMap[h.symbol];
+          const currentPrice = quote?.price || parseFloat(h.purchasePrice);
           const currentTotalValue = (parseFloat(h.quantity) * currentPrice).toFixed(2);
           const costBasis = h.totalValue;
           return {
@@ -168,6 +169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             currentPrice: String(currentPrice),
             totalValue: currentTotalValue,
             costBasis,
+            changePercent: quote?.changePercent || 0,
             currency: "USD",
             securityType: "manual",
             updatedAt: h.createdAt,
@@ -192,30 +194,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/portfolio/history", isAuthenticated, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const { since } = req.query;
-      const sinceDate = since ? new Date(since as string) : undefined;
-      let history = await storage.getPortfolioHistory(userId, sinceDate);
-      if (history.length < 2) {
-        const allHistory = await storage.getPortfolioHistory(userId);
-        if (allHistory.length < 2) {
-          await recordPortfolioSnapshot(userId);
-          if (allHistory.length === 0) {
-            const yesterday = new Date(Date.now() - 86400000);
-            await recordPortfolioSnapshot(userId, yesterday);
-          }
-          history = await storage.getPortfolioHistory(userId, sinceDate);
-        } else if (sinceDate) {
-          const lastTwo = allHistory.slice(-2);
-          history = lastTwo;
+      const range = (req.query.range as string) || "1D";
+
+      const [brokerageHoldings, manualHoldingsList, cashBalance] = await Promise.all([
+        storage.getHoldings(userId),
+        storage.getManualHoldings(userId),
+        storage.getCashBalance(userId),
+      ]);
+
+      const allHoldings = [
+        ...brokerageHoldings.map(h => ({ symbol: h.symbol, quantity: parseFloat(h.quantity) })),
+        ...manualHoldingsList.map(h => ({ symbol: h.symbol, quantity: parseFloat(h.quantity) })),
+      ];
+      const symbols = [...new Set(allHoldings.map(h => h.symbol))];
+      const cash = parseFloat(cashBalance);
+
+      if (symbols.length === 0) {
+        return res.json({ points: [], referenceValue: cash.toFixed(2), liveValue: cash.toFixed(2) });
+      }
+
+      const chartResults = await Promise.all(symbols.map(sym => getEquityChart(sym, range)));
+
+      const prevCloseMap: Record<string, number> = {};
+      const livePriceMap: Record<string, number> = {};
+      const symbolCharts: Record<string, { date: string; close: number }[]> = {};
+      symbols.forEach((sym, i) => {
+        symbolCharts[sym] = chartResults[i].points;
+        if (chartResults[i].previousClose) prevCloseMap[sym] = chartResults[i].previousClose!;
+        if (chartResults[i].currentPrice) livePriceMap[sym] = chartResults[i].currentPrice!;
+      });
+
+      const allDates = new Set<string>();
+      const symbolPriceMaps: Record<string, Map<string, number>> = {};
+      for (const [sym, points] of Object.entries(symbolCharts)) {
+        symbolPriceMaps[sym] = new Map();
+        for (const p of points) {
+          allDates.add(p.date);
+          symbolPriceMaps[sym].set(p.date, p.close);
         }
       }
-      res.json(history);
+      const sortedDates = Array.from(allDates).sort();
+
+      const qtyBySymbol: Record<string, number> = {};
+      for (const h of allHoldings) {
+        qtyBySymbol[h.symbol] = (qtyBySymbol[h.symbol] || 0) + h.quantity;
+      }
+
+      const lastPrice: Record<string, number> = {};
+      const historyPoints = sortedDates.map(date => {
+        let total = cash;
+        for (const sym of symbols) {
+          const price = symbolPriceMaps[sym].get(date);
+          if (price !== undefined) lastPrice[sym] = price;
+          if (lastPrice[sym] !== undefined) total += qtyBySymbol[sym] * lastPrice[sym];
+        }
+        return { id: date, userId, date, totalValue: total.toFixed(2) };
+      });
+
+      let referenceValue: number;
+      if (range === "1D") {
+        referenceValue = cash;
+        for (const sym of symbols) {
+          if (prevCloseMap[sym]) referenceValue += qtyBySymbol[sym] * prevCloseMap[sym];
+        }
+      } else {
+        referenceValue = historyPoints.length > 0 ? parseFloat(historyPoints[0].totalValue) : cash;
+      }
+
+      let liveTotal = cash;
+      for (const sym of symbols) {
+        liveTotal += qtyBySymbol[sym] * (livePriceMap[sym] || lastPrice[sym] || 0);
+      }
+
+      return res.json({
+        points: historyPoints,
+        referenceValue: referenceValue.toFixed(2),
+        liveValue: liveTotal.toFixed(2),
+      });
     } catch {
       res.status(500).json({ message: "Server error" });
     }
   });
 
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+  async function computeCurrentPortfolioValue(userId: string): Promise<number | null> {
+    const [brokerageHoldings, manualHoldingsList, cashBalance] = await Promise.all([
+      storage.getHoldings(userId),
+      storage.getManualHoldings(userId),
+      storage.getCashBalance(userId),
+    ]);
+    const allSymbols = [
+      ...brokerageHoldings.map(h => h.symbol),
+      ...manualHoldingsList.map(h => h.symbol),
+    ];
+    const uniqueSymbols = [...new Set(allSymbols)];
+    if (uniqueSymbols.length === 0 && parseFloat(cashBalance) === 0) return null;
+
+    let priceMap: Record<string, number> = {};
+    if (uniqueSymbols.length > 0) {
+      try {
+        const quoteResults = await getQuotes(uniqueSymbols);
+        for (const q of quoteResults) {
+          if (q.price > 0) priceMap[q.symbol] = q.price;
+        }
+      } catch {}
+    }
+
+    const brokerageValue = brokerageHoldings.reduce((sum, h) => {
+      const price = priceMap[h.symbol] || parseFloat(h.currentPrice || h.totalValue);
+      return sum + parseFloat(h.quantity) * price;
+    }, 0);
+    const manualValue = manualHoldingsList.reduce((sum, h) => {
+      const price = priceMap[h.symbol] || parseFloat(h.purchasePrice);
+      return sum + parseFloat(h.quantity) * price;
+    }, 0);
+    return brokerageValue + manualValue + parseFloat(cashBalance);
+  }
 
   async function recordPortfolioSnapshot(userId: string, date?: Date) {
     const [brokerageHoldings, manualHoldingsList, cashBalance] = await Promise.all([
@@ -292,13 +387,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await recordPortfolioSnapshot(userId);
         }
       } else {
-        const history = await storage.getPortfolioHistory(userId);
-        if (history.length === 0) {
-          const yesterday = new Date(now.getTime() - 86400000);
-          await recordPortfolioSnapshot(userId, yesterday);
-        }
         await recordPortfolioSnapshot(userId);
       }
+
+      const history = await storage.getPortfolioHistory(userId);
+      if (history.length < 2) {
+        const yesterday = new Date(now.getTime() - 86400000);
+        await recordPortfolioSnapshot(userId, yesterday);
+      }
+
       res.json(holding);
     } catch (err: any) {
       console.error("Add manual holding error:", err.message);
@@ -310,13 +407,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId!;
       await storage.deleteManualHolding(req.params.id, userId);
-      const [remainingBrokerage, remainingManual] = await Promise.all([
-        storage.getHoldings(userId),
-        storage.getManualHoldings(userId),
-      ]);
-      if (remainingBrokerage.length > 0 || remainingManual.length > 0) {
-        await recordPortfolioSnapshot(userId);
-      }
+      await storage.clearPortfolioHistory(userId);
+      await recordPortfolioSnapshot(userId);
       res.json({ success: true });
     } catch {
       res.status(500).json({ message: "Server error" });
@@ -379,12 +471,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           imported.push(holding);
         }
       }
+      await recordPortfolioSnapshot(userId);
       const history = await storage.getPortfolioHistory(userId);
-      if (history.length === 0) {
+      if (history.length < 2) {
         const yesterday = new Date(Date.now() - 86400000);
         await recordPortfolioSnapshot(userId, yesterday);
       }
-      await recordPortfolioSnapshot(userId);
       res.json({ imported: imported.length, holdings: imported });
     } catch (err: any) {
       console.error("Import holdings error:", err.message);
@@ -636,9 +728,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { symbol } = req.params;
       const range = (req.query.range as string) || "1D";
-      const points = await getEquityChart(symbol.toUpperCase(), range);
+      const result = await getEquityChart(symbol.toUpperCase(), range);
       res.set("Cache-Control", "public, max-age=120");
-      res.json(points);
+      res.json(result);
     } catch (err: any) {
       console.error("Equity chart error:", err.message);
       res.status(500).json({ message: "Failed to fetch equity chart" });

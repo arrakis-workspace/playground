@@ -25,6 +25,7 @@ export interface IStorage {
 
   addPortfolioHistory(userId: string, totalValue: string, date?: Date): Promise<void>;
   getPortfolioHistory(userId: string, since?: Date): Promise<PortfolioHistoryEntry[]>;
+  clearPortfolioHistory(userId: string): Promise<void>;
 
   createConnection(requesterId: string, receiverId: string): Promise<Connection>;
   getConnection(userId1: string, userId2: string): Promise<Connection | undefined>;
@@ -198,6 +199,10 @@ class DatabaseStorage implements IStorage {
         .orderBy(asc(portfolioHistory.date));
     }
     return db.select().from(portfolioHistory).where(eq(portfolioHistory.userId, userId)).orderBy(asc(portfolioHistory.date));
+  }
+
+  async clearPortfolioHistory(userId: string): Promise<void> {
+    await db.delete(portfolioHistory).where(eq(portfolioHistory.userId, userId));
   }
 
   async createConnection(requesterId: string, receiverId: string): Promise<Connection> {

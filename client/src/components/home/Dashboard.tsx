@@ -14,14 +14,7 @@ interface DashboardProps {
   user: User;
 }
 
-const TIME_RANGES = [
-  { label: "1D", days: 1 },
-  { label: "1W", days: 7 },
-  { label: "1M", days: 30 },
-  { label: "1Y", days: 365 },
-  { label: "5Y", days: 1825 },
-  { label: "All", days: 0 },
-];
+const TIME_RANGES = ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y", "All"];
 
 const INDEX_TOGGLES = [
   { key: "^GSPC", label: "S&P 500", color: "hsl(142, 71%, 45%)" },
@@ -49,9 +42,9 @@ interface IndexHistoryResult {
   isFutures: boolean;
 }
 
-function normalizeToPercent(data: { date: string; value: number }[]): { date: string; value: number; raw: number }[] {
+function normalizeToPercent(data: { date: string; value: number }[], baseOverride?: number): { date: string; value: number; raw: number }[] {
   if (data.length === 0) return [];
-  const base = data[0].value;
+  const base = baseOverride ?? data[0].value;
   if (base === 0) return data.map(d => ({ ...d, value: 0, raw: d.value }));
   return data.map(d => ({ date: d.date, value: ((d.value / base) - 1) * 100, raw: d.value }));
 }
@@ -61,7 +54,10 @@ function formatDateLabel(dateStr: string, range: string): string {
   if (range === "1D") {
     return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   }
-  if (range === "1W" || range === "1M") {
+  if (range === "5D" || range === "1M") {
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  }
+  if (range === "6M" || range === "YTD") {
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
   if (range === "1Y") {
@@ -88,15 +84,12 @@ export function Dashboard({ user }: DashboardProps) {
     queryKey: ["/api/portfolio/cash"],
   });
 
-  const selectedRange = TIME_RANGES.find(r => r.label === timeRange);
-  const sinceParam = selectedRange && selectedRange.days > 0
-    ? `?since=${new Date(Date.now() - selectedRange.days * 86400000).toISOString()}`
-    : "";
+  const historyParams = useMemo(() => `?range=${timeRange}`, [timeRange]);
 
-  const { data: historyData = [] } = useQuery<any[]>({
-    queryKey: ["/api/portfolio/history", timeRange],
+  const { data: historyResponse } = useQuery<any>({
+    queryKey: ["/api/portfolio/history", timeRange, historyParams],
     queryFn: async () => {
-      const res = await fetch(`/api/portfolio/history${sinceParam}`, { credentials: "include" });
+      const res = await fetch(`/api/portfolio/history${historyParams}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json();
     },
@@ -154,13 +147,40 @@ export function Dashboard({ user }: DashboardProps) {
   const cashBalance = parseFloat(cashData?.cashBalance || "0");
   const totalValue = holdingsValue + cashBalance;
 
+  const historyData: any[] = useMemo(() => {
+    if (!historyResponse) return [];
+    if (Array.isArray(historyResponse)) return historyResponse;
+    return historyResponse.points || [];
+  }, [historyResponse]);
+
+  const historyReferenceValue: number | undefined = useMemo(() => {
+    if (!historyResponse || Array.isArray(historyResponse)) return undefined;
+    return historyResponse.referenceValue ? parseFloat(historyResponse.referenceValue) : undefined;
+  }, [historyResponse]);
+
+  const liveChangePercent: number | null = useMemo(() => {
+    if (!historyResponse || Array.isArray(historyResponse)) return null;
+    const ref = historyResponse.referenceValue ? parseFloat(historyResponse.referenceValue) : 0;
+    const live = historyResponse.liveValue ? parseFloat(historyResponse.liveValue) : 0;
+    if (ref === 0) return null;
+    return ((live / ref) - 1) * 100;
+  }, [historyResponse]);
+
+  const liveAbsoluteChange: number | null = useMemo(() => {
+    if (!historyResponse || Array.isArray(historyResponse)) return null;
+    const ref = historyResponse.referenceValue ? parseFloat(historyResponse.referenceValue) : 0;
+    const live = historyResponse.liveValue ? parseFloat(historyResponse.liveValue) : 0;
+    if (ref === 0) return null;
+    return live - ref;
+  }, [historyResponse]);
+
   const portfolioSeries = useMemo(() => {
     const raw = historyData.map((d: any) => ({
       date: d.date,
       value: parseFloat(d.totalValue),
     }));
-    return normalizeToPercent(raw);
-  }, [historyData]);
+    return normalizeToPercent(raw, historyReferenceValue);
+  }, [historyData, historyReferenceValue]);
 
   const indexSeries = useMemo(() => {
     const result: Record<string, { date: string; value: number }[]> = {};
@@ -181,7 +201,7 @@ export function Dashboard({ user }: DashboardProps) {
   }, [indexData]);
 
   const hasPortfolioData = portfolioSeries.length > 1;
-  const portfolioColor = hasPortfolioData && portfolioSeries[portfolioSeries.length - 1].value >= 0
+  const portfolioColor = hasPortfolioData && (liveChangePercent ?? portfolioSeries[portfolioSeries.length - 1].value) >= 0
     ? PORTFOLIO_COLOR_UP : PORTFOLIO_COLOR_DOWN;
   const hasAnyIndexData = Object.values(indexSeries).some(s => s.length > 0);
   const showChart = hasPortfolioData || hasAnyIndexData;
@@ -244,7 +264,7 @@ export function Dashboard({ user }: DashboardProps) {
     symbol: h.symbol || "???",
     name: h.name || h.symbol || "Unknown",
     price: parseFloat(h.totalValue || "0"),
-    changePercent: 0,
+    changePercent: h.changePercent || 0,
   }));
 
   const topEquityItems: EquityItem[] = (topEquities || []).map((eq: any) => ({
@@ -296,10 +316,25 @@ export function Dashboard({ user }: DashboardProps) {
 
       <div className="bg-card rounded-2xl shadow-sm border border-border p-5 lg:p-8 mb-4">
         <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-1" data-testid="text-portfolio-label">Total Portfolio Value</p>
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-3">
           <p className="text-foreground text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight" data-testid="text-portfolio-value">
             ${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
+          {hasPortfolioData && (() => {
+            const displayPct = liveChangePercent ?? portfolioSeries[portfolioSeries.length - 1].value;
+            const lastRaw = portfolioSeries[portfolioSeries.length - 1].raw;
+            const firstRaw = historyReferenceValue ?? portfolioSeries[0].raw;
+            const displayAbs = liveAbsoluteChange ?? (lastRaw - firstRaw);
+            const colorClass = displayPct >= 0 ? "text-emerald-500" : "text-red-500";
+            return (
+              <span
+                className={`text-sm md:text-base font-semibold ${colorClass}`}
+                data-testid="text-portfolio-change"
+              >
+                {displayAbs >= 0 ? "+$" : "-$"}{Math.abs(displayAbs).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({displayPct >= 0 ? "+" : ""}{displayPct.toFixed(2)}%)
+              </span>
+            );
+          })()}
         </div>
         {cashBalance > 0 && (
           <p className="text-muted-foreground text-xs mt-1" data-testid="text-cash-balance-dashboard">
@@ -360,7 +395,7 @@ export function Dashboard({ user }: DashboardProps) {
                 />
                 <YAxis
                   hide
-                  domain={[(dataMin: number) => Math.min(dataMin - 1, -1), (dataMax: number) => Math.max(dataMax + 1, 1)]}
+                  domain={[(dataMin: number) => dataMin - Math.max(Math.abs(dataMin) * 0.1, 0.1), (dataMax: number) => dataMax + Math.max(Math.abs(dataMax) * 0.1, 0.1)]}
                 />
                 <ReferenceLine
                   y={0}
@@ -442,14 +477,14 @@ export function Dashboard({ user }: DashboardProps) {
         <div className="flex gap-1.5 mt-4 flex-wrap">
           {TIME_RANGES.map(r => (
             <button
-              key={r.label}
-              onClick={() => setTimeRange(r.label)}
+              key={r}
+              onClick={() => setTimeRange(r)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                timeRange === r.label ? "bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground border border-border"
+                timeRange === r ? "bg-primary text-primary-foreground shadow-sm" : "bg-card text-muted-foreground border border-border"
               }`}
-              data-testid={`button-range-${r.label}`}
+              data-testid={`button-range-${r}`}
             >
-              {r.label}
+              {r}
             </button>
           ))}
         </div>

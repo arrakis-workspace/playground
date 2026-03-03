@@ -18,7 +18,9 @@ export function SnaptradeCallback() {
         setAccountCount(data.accountsLinked || 0);
         setStatus("success");
         queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/portfolio"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/portfolio/holdings"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/portfolio/cash"] });
+        queryClient.removeQueries({ queryKey: ["/api/portfolio/history"] });
       } catch {
         setStatus("error");
       }

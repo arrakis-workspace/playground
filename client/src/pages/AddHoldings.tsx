@@ -134,6 +134,7 @@ function UploadStatementTab({ onImported }: { onImported: () => void }) {
       setParsedResult(null);
       onImported();
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/holdings"] });
+      queryClient.removeQueries({ queryKey: ["/api/portfolio/history"] });
     },
     onError: () => {
       toast({ title: "Failed to import holdings", variant: "destructive" });
@@ -376,6 +377,7 @@ function ManualEntryTab({ holdings, onChanged }: { holdings: any[]; onChanged: (
       setPurchaseDate("");
       onChanged();
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/holdings"] });
+      queryClient.removeQueries({ queryKey: ["/api/portfolio/history"] });
     },
     onError: () => {
       toast({ title: "Failed to add holding", variant: "destructive" });
@@ -390,6 +392,7 @@ function ManualEntryTab({ holdings, onChanged }: { holdings: any[]; onChanged: (
       toast({ title: "Holding removed" });
       onChanged();
       queryClient.invalidateQueries({ queryKey: ["/api/portfolio/holdings"] });
+      queryClient.removeQueries({ queryKey: ["/api/portfolio/history"] });
     },
   });
 
@@ -578,6 +581,7 @@ function ManualEntryTab({ holdings, onChanged }: { holdings: any[]; onChanged: (
             onChanged();
             queryClient.invalidateQueries({ queryKey: ["/api/portfolio/holdings"] });
             queryClient.invalidateQueries({ queryKey: ["/api/portfolio/cash"] });
+            queryClient.removeQueries({ queryKey: ["/api/portfolio/history"] });
           }}
         />
       )}
