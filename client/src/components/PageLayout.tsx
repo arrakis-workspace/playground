@@ -35,7 +35,7 @@ export function PageLayout({ children, showBottomNav = true, className = "" }: P
   return (
     <div className={`bg-background w-full min-h-screen flex flex-col ${className}`}>
       <header className="bg-card border-b border-border px-4 py-3 sm:px-6">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2.5">
               <img className="w-8 h-8" alt="Butterfli logo" src="/figmaAssets/frame.svg" data-testid="img-header-logo" />

@@ -304,7 +304,7 @@ export function Dashboard({ user }: DashboardProps) {
   }
 
   return (
-    <div className="flex flex-col w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl">
+    <div className="flex flex-col w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-6xl xl:max-w-7xl">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-semibold text-foreground tracking-tight" data-testid="text-greeting">
           Hey {displayName}!
@@ -314,10 +314,17 @@ export function Dashboard({ user }: DashboardProps) {
         )}
       </div>
 
-      <div className="bg-card rounded-2xl shadow-sm border border-border p-5 lg:p-8 mb-4">
+      <EquitySearch />
+
+      <div className="lg:grid lg:grid-cols-[3fr_2fr] lg:gap-5 lg:items-start">
+
+        {/* LEFT COLUMN: portfolio chart + top equities + watchlists */}
+        <div className="flex flex-col min-w-0">
+
+      <div className="bg-card rounded-2xl shadow-sm border border-border p-5 lg:p-6 mb-4">
         <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-1" data-testid="text-portfolio-label">Total Portfolio Value</p>
         <div className="flex items-baseline gap-3">
-          <p className="text-foreground text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight" data-testid="text-portfolio-value">
+          <p className="text-foreground text-3xl md:text-4xl font-bold tracking-tight" data-testid="text-portfolio-value">
             ${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
           {hasPortfolioData && (() => {
@@ -491,103 +498,138 @@ export function Dashboard({ user }: DashboardProps) {
 
       </div>
 
-      <EquitySearch />
-
-      {holdingsData.length > 0 ? (
-        <EquityList
-          title="Your Holdings"
-          items={holdingsEquityItems}
-          testIdPrefix="holdings"
-          emptyMessage="No holdings yet"
-          visibleCount={4}
-          onTitleClick={() => setShowFullHoldings(true)}
-        />
-      ) : (
-        <div className="bg-card rounded-2xl shadow-sm border border-border p-8 lg:p-12 mb-4 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-8 h-8 text-muted-foreground" />
+          {/* Holdings — mobile only (shown right below portfolio card) */}
+          <div className="lg:hidden">
+            {holdingsData.length > 0 ? (
+              <EquityList
+                title="Your Holdings"
+                items={holdingsEquityItems}
+                testIdPrefix="holdings-mobile"
+                emptyMessage="No holdings yet"
+                visibleCount={999}
+                onTitleClick={() => setShowFullHoldings(true)}
+              />
+            ) : (
+              <div className="bg-card rounded-2xl shadow-sm border border-border p-8 mb-4 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                  <Building2 className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <p className="text-foreground font-medium text-lg">No holdings yet</p>
+                <p className="text-muted-foreground text-sm mt-1">Add your investments to track your portfolio</p>
+                <Button
+                  onClick={() => setLocation("/add-holdings")}
+                  className="mt-5 rounded-xl"
+                  data-testid="button-add-holdings-mobile"
+                >
+                  Add Holdings
+                </Button>
+              </div>
+            )}
           </div>
-          <p className="text-foreground font-medium text-lg" data-testid="text-no-holdings">No holdings yet</p>
-          <p className="text-muted-foreground text-sm mt-1">Add your investments to track your portfolio</p>
-          <Button
-            onClick={() => setLocation("/add-holdings")}
-            className="mt-5 rounded-xl"
-            data-testid="button-add-holdings-from-dashboard"
-          >
-            Add Holdings
-          </Button>
-        </div>
-      )}
 
-      <EquityList
-        title="Top Equities"
-        items={topEquityItems}
-        isLoading={topEquitiesLoading}
-        testIdPrefix="top-equities"
-        visibleCount={10}
-        sortOptions={TOP_EQUITIES_SORT_OPTIONS}
-        activeSort={topEquitiesSort}
-        onSortChange={setTopEquitiesSort}
-        emptyMessage="Unable to load market data"
-      />
+          {/* Top Equities */}
+          <EquityList
+            title="Top Equities"
+            items={topEquityItems}
+            isLoading={topEquitiesLoading}
+            testIdPrefix="top-equities"
+            visibleCount={10}
+            sortOptions={TOP_EQUITIES_SORT_OPTIONS}
+            activeSort={topEquitiesSort}
+            onSortChange={setTopEquitiesSort}
+            emptyMessage="Unable to load market data"
+          />
 
-      {watchlists.map((wl: any) => (
-        <WatchlistEquityList
-          key={wl.id}
-          watchlist={wl}
-          onDelete={() => deleteWatchlistMutation.mutate(wl.id)}
-        />
-      ))}
-
-      {showAddWatchlist ? (
-        <div className="bg-card rounded-2xl shadow-sm border border-border p-5 lg:p-8 mb-4">
-          <h3 className="text-foreground font-semibold text-lg mb-3" data-testid="text-add-watchlist-title">New Watchlist</h3>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (newWatchlistName.trim()) {
-                createWatchlistMutation.mutate(newWatchlistName.trim());
-              }
-            }}
-            className="flex gap-2"
-          >
-            <Input
-              value={newWatchlistName}
-              onChange={(e) => setNewWatchlistName(e.target.value)}
-              placeholder="Watchlist name..."
-              className="flex-1"
-              data-testid="input-watchlist-name"
-              autoFocus
+          {/* Watchlists */}
+          {watchlists.map((wl: any) => (
+            <WatchlistEquityList
+              key={wl.id}
+              watchlist={wl}
+              onDelete={() => deleteWatchlistMutation.mutate(wl.id)}
             />
+          ))}
+
+          {showAddWatchlist ? (
+            <div className="bg-card rounded-2xl shadow-sm border border-border p-5 mb-4">
+              <h3 className="text-foreground font-semibold text-lg mb-3" data-testid="text-add-watchlist-title">New Watchlist</h3>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (newWatchlistName.trim()) {
+                    createWatchlistMutation.mutate(newWatchlistName.trim());
+                  }
+                }}
+                className="flex gap-2"
+              >
+                <Input
+                  value={newWatchlistName}
+                  onChange={(e) => setNewWatchlistName(e.target.value)}
+                  placeholder="Watchlist name..."
+                  className="flex-1"
+                  data-testid="input-watchlist-name"
+                  autoFocus
+                />
+                <Button
+                  type="submit"
+                  disabled={!newWatchlistName.trim() || createWatchlistMutation.isPending}
+                  data-testid="button-save-watchlist"
+                >
+                  {createWatchlistMutation.isPending ? "Saving..." : "Create"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => { setShowAddWatchlist(false); setNewWatchlistName(""); }}
+                  data-testid="button-cancel-watchlist"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </form>
+            </div>
+          ) : (
             <Button
-              type="submit"
-              disabled={!newWatchlistName.trim() || createWatchlistMutation.isPending}
-              data-testid="button-save-watchlist"
+              variant="outline"
+              onClick={() => setShowAddWatchlist(true)}
+              className="mb-4 self-start"
+              data-testid="button-add-watchlist"
             >
-              {createWatchlistMutation.isPending ? "Saving..." : "Create"}
+              <Plus className="w-4 h-4 mr-2" />
+              Add Watchlist
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => { setShowAddWatchlist(false); setNewWatchlistName(""); }}
-              data-testid="button-cancel-watchlist"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </form>
+          )}
         </div>
-      ) : (
-        <Button
-          variant="outline"
-          onClick={() => setShowAddWatchlist(true)}
-          className="mb-4 self-start"
-          data-testid="button-add-watchlist"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Watchlist
-        </Button>
-      )}
+
+        {/* RIGHT COLUMN: Your Holdings — desktop only */}
+        <div className="hidden lg:flex flex-col min-w-0">
+          {holdingsData.length > 0 ? (
+            <EquityList
+              title="Your Holdings"
+              items={holdingsEquityItems}
+              testIdPrefix="holdings"
+              emptyMessage="No holdings yet"
+              visibleCount={999}
+              onTitleClick={() => setShowFullHoldings(true)}
+            />
+          ) : (
+            <div className="bg-card rounded-2xl shadow-sm border border-border p-8 mb-4 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+                <Building2 className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-foreground font-medium text-lg" data-testid="text-no-holdings">No holdings yet</p>
+              <p className="text-muted-foreground text-sm mt-1">Add your investments to track your portfolio</p>
+              <Button
+                onClick={() => setLocation("/add-holdings")}
+                className="mt-5 rounded-xl"
+                data-testid="button-add-holdings-from-dashboard"
+              >
+                Add Holdings
+              </Button>
+            </div>
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }
